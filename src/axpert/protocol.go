@@ -298,8 +298,8 @@ func parseFirmwareVersion(resp string, fwPrefix string) (*FirmwareVersion, error
 
 func parseRatingInfo(resp string) (*RatingInfo, error) {
 	parts := strings.Split(resp, " ")
-	if len(parts) != 25 {
-		return nil, fmt.Errorf("invalid response %s", resp)
+	if len(parts) < 25 {
+		return nil, fmt.Errorf("invalid response %s : not enough fields", resp)
 	}
 
 	info := RatingInfo{}
