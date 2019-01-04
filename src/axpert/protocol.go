@@ -90,7 +90,7 @@ func sendRequest(c Connector, req string) (resp string, err error) {
 		return
 	}
 
-	resp = string(readBytes[1 : len(readBytes)-2])
+	resp = string(readBytes[1 : len(readBytes)-3])
 	return
 }
 
