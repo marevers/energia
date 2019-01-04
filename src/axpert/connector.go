@@ -33,11 +33,10 @@ func (uc *USBConnector) Path() string {
 }
 
 func (uc *USBConnector) Open() error {
-	deviceInfo, err := hid.ByPath(uc.Path())
-	if err != nil {
-		return err
+	// Do nothing if already open
+	if uc.device != nil {
+		return nil
 	}
-	uc.deviceInfo = deviceInfo
 
 	device, err := uc.deviceInfo.Open()
 	if err != nil {
@@ -47,8 +46,9 @@ func (uc *USBConnector) Open() error {
 	return nil
 }
 
-func (uc *USBConnector) Close()  {
+func (uc *USBConnector) Close() {
 	uc.device.Close()
+	uc.device = nil
 }
 
 func (uc *USBConnector) ReadUntilCR() ([]byte, error) {
