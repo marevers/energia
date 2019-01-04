@@ -11,13 +11,17 @@ type Connector interface {
 }
 
 type USBConnector struct {
-	path string
 	deviceInfo *hid.DeviceInfo
-	device hid.Device
+	device     hid.Device
 }
 
-func NewUSBConnector(path string) *USBConnector {
-	return &USBConnector{path: path}
+func NewUSBConnector(path string) (uc *USBConnector, err error) {
+	deviceInfo, err := hid.ByPath(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &USBConnector{deviceInfo: deviceInfo}, nil
 }
 
 func (uc *USBConnector) DeviceInfo() *hid.DeviceInfo {
@@ -25,7 +29,7 @@ func (uc *USBConnector) DeviceInfo() *hid.DeviceInfo {
 }
 
 func (uc *USBConnector) Path() string {
-	return uc.path
+	return uc.deviceInfo.Path
 }
 
 func (uc *USBConnector) Open() error {
