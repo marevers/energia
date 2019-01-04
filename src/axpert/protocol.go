@@ -102,8 +102,8 @@ func validateResponse(read []byte) error {
 	if read[readLen-1] != 0x0d {
 		return fmt.Errorf("invalid response end %x", read[readLen-1])
 	}
-	readCrc := read[readLen-2 : readLen]
-	calcCrc := crc(read[:readLen-2])
+	readCrc := read[readLen-3 : readLen-1]
+	calcCrc := crc(read[:readLen-3])
 	if !bytes.Equal(readCrc, calcCrc) {
 		return fmt.Errorf("CRC error, received %v, expected %v", readCrc, calcCrc)
 	}
@@ -112,7 +112,7 @@ func validateResponse(read []byte) error {
 }
 
 func crc(data []byte) []byte {
-	i := crc16.ChecksumCCITTFalse(data)
+	i := crc16.Checksum(data, crc16.MakeBitsReversedTable(crc16.CCITTFalse))
 	bs := []byte{uint8(i >> 8), uint8(i & 0xff)}
 	for i := range bs {
 		if bs[i] == 0x0a || bs[i] == 0x0d || bs[i] == 0x28 {
