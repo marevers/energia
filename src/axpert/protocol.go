@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/howeyc/crc16"
@@ -80,7 +81,7 @@ func ChargingStage(c Connector) (chargingStage string, err error) {
 	return
 }
 
-func OutputMode(c Connector) (otputMode string, err error) {
+func DeviceOutputMode(c Connector) (otputMode string, err error) {
 	otputMode, err = sendRequest(c, "QOPM")
 	return
 }
@@ -102,6 +103,126 @@ func MaxUtilityChargingCurrent(c Connector) (charginCurrent string, err error) {
 
 func MaxTotalChargingCurrent(c Connector) (charginCurrent string, err error) {
 	charginCurrent, err = sendRequest(c, "QMCHGCR")
+	return
+}
+
+//go:generate enumer -type=BatteryType -json
+type BatteryType uint8
+
+const (
+	AGM BatteryType = iota
+	Flooded
+	User
+)
+
+//go:generate enumer -type=VoltageRange -json
+type VoltageRange uint8
+
+const (
+	Appliance VoltageRange = iota
+	UPS
+)
+
+//go:generate enumer -type=OutputSourcePriority -json
+type OutputSourcePriority uint8
+
+const (
+	OutputUtilityFirst OutputSourcePriority = iota
+	OutputSolarFirst
+	OutputSBUFirst
+)
+
+//go:generate enumer -type=ChargerSourcePriority -json
+type ChargerSourcePriority uint8
+
+const (
+	ChargerUtilityFirst ChargerSourcePriority = iota
+	ChargerSolarFirst
+	ChargerSolarAndUtility
+	ChargerSolarOnly
+)
+
+//go:generate enumer -type=MachineType -json
+type MachineType uint8
+
+const (
+	GridTie          MachineType = 00
+	OffGrid          MachineType = 01
+	Hybrid           MachineType = 10
+	OffGrid2Trackers MachineType = 11
+	OffGrid3Trackers MachineType = 20
+)
+
+//go:generate enumer -type=Topology -json
+type Topology uint8
+
+const (
+	Transfomerless Topology = iota
+	Transformer
+)
+
+//go:generate enumer -type=OutputMode -json
+type OutputMode uint8
+
+const (
+	SingleMachine OutputMode = iota
+	Parallel
+	Phase1
+	Phase2
+	Phase3
+)
+
+//go:generate enumer -type=ParallelPVOK -json
+type ParallelPVOK uint8
+
+const (
+	AnyInverterConnected ParallelPVOK = iota
+	AllInvertersConnected
+)
+
+//go:generate enumer -type=PVPowerBalance -json
+type PVPowerBalance uint8
+
+const (
+	InputCurrentIsChargedCurrent PVPowerBalance = iota
+	InputPowerIsChargedPowerAndLoadPower
+)
+
+type RatingInfo struct {
+	GridRatingVoltage           float32
+	GridRatingCurrent           float32
+	ACOutputRatingVoltage       float32
+	ACOutputRatingFrequency     float32
+	ACOutputRatingCurrent       float32
+	ACOutputRatingApparentPower int
+	ACOutputRatingActivePower   int
+	BatteryRatingVoltage        float32
+	BatteryRechargeVoltage      float32
+	BatteryUnderVoltage         float32
+	BatteryBulkVoltage          float32
+	BatteryFloatVoltage         float32
+	BatteryType                 BatteryType
+	MaxACChargingCurrent        int
+	MaxChargingCurrent          int
+	InputVoltageRange           VoltageRange
+	OutputSourcePriority        OutputSourcePriority
+	ChargerSourcePriority       ChargerSourcePriority
+	ParallelMaxNumber           int
+	MachineType                 MachineType
+	Topology                    Topology
+	OutputMode                  OutputMode
+	BatteryRedischargeVoltage   float32
+	ParallelPVOK                ParallelPVOK
+	PVPowerBalance              PVPowerBalance
+}
+
+func DeviceRatingInfo(c Connector) (ratingInfo *RatingInfo, err error) {
+	resp, err := sendRequest(c, "QPIRI")
+	if err != nil {
+		return
+	}
+
+	ratingInfo, err = parseRatingInfo(resp)
 	return
 }
 
@@ -173,4 +294,165 @@ func parseFirmwareVersion(resp string, fwPrefix string) (*FirmwareVersion, error
 	}
 
 	return &FirmwareVersion{version[0], version[1]}, nil
+}
+
+func parseRatingInfo(resp string) (*RatingInfo, error) {
+	parts := strings.Split(resp, " ")
+	if len(parts) != 25 {
+		return nil, fmt.Errorf("invalid response %s", resp)
+	}
+
+	info := RatingInfo{}
+
+	f, err := strconv.ParseFloat(parts[0], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.GridRatingVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[1], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.GridRatingCurrent = float32(f)
+
+	f, err = strconv.ParseFloat(parts[2], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputRatingVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[3], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputRatingFrequency = float32(f)
+
+	f, err = strconv.ParseFloat(parts[4], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputRatingCurrent = float32(f)
+
+	i, err := strconv.Atoi(parts[5])
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputRatingApparentPower = i
+
+	i, err = strconv.Atoi(parts[6])
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputRatingActivePower = i
+
+	f, err = strconv.ParseFloat(parts[7], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryRatingVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[8], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryRechargeVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[9], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryUnderVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[10], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryBulkVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[11], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryFloatVoltage = float32(f)
+
+	b, err := strconv.ParseUint(parts[12], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryType = BatteryType(b)
+
+	i, err = strconv.Atoi(parts[13])
+	if err != nil {
+		return nil, err
+	}
+	info.MaxACChargingCurrent = i
+
+	i, err = strconv.Atoi(parts[14])
+	if err != nil {
+		return nil, err
+	}
+	info.MaxChargingCurrent = i
+
+	b, err = strconv.ParseUint(parts[15], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.InputVoltageRange = VoltageRange(b)
+
+	b, err = strconv.ParseUint(parts[16], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.OutputSourcePriority = OutputSourcePriority(b)
+
+	b, err = strconv.ParseUint(parts[17], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.ChargerSourcePriority = ChargerSourcePriority(b)
+
+	i, err = strconv.Atoi(parts[18])
+	if err != nil {
+		return nil, err
+	}
+	info.ParallelMaxNumber = i
+
+	b, err = strconv.ParseUint(parts[19], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.MachineType = MachineType(b)
+
+	b, err = strconv.ParseUint(parts[20], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.Topology = Topology(b)
+
+	b, err = strconv.ParseUint(parts[21], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.OutputMode = OutputMode(b)
+
+	f, err = strconv.ParseFloat(parts[22], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryRedischargeVoltage = float32(f)
+
+	b, err = strconv.ParseUint(parts[23], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.ParallelPVOK = ParallelPVOK(b)
+
+	b, err = strconv.ParseUint(parts[24], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.PVPowerBalance = PVPowerBalance(b)
+
+	return &info, nil
 }

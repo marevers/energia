@@ -60,7 +60,7 @@ func main() {
 	}
 	fmt.Println("Charging stage: ", chargingStage)
 
-	outputMode, err := axpert.OutputMode(conn)
+	outputMode, err := axpert.DeviceOutputMode(conn)
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +71,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("DSPBootstraped: ", bootstraped)
-/*##
+	/*##
 	maxSolarChargingCurrent, err := axpert.MaxSolarChargingCurrent(conn)
 	if err != nil {
 		panic(err)
@@ -89,7 +89,14 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("MaxTotalChargingCurrent: ", maxTotalChargingCurrent)
-*/
+	*/
+
+	ratingInfo, err := axpert.DeviceRatingInfo(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Device rating info ", ratingInfo)
+
 	fmt.Println("Closing connection")
 	conn.Close()
 }
