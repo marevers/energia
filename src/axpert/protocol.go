@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"github.com/howeyc/crc16"
 	"log"
-	"regexp"
-	"strconv"
 	"strings"
 )
 
-func ProtocolId(c Connector) (id int, err error) {
-	resp, err := sendRequest(c, "QPI")
-	if err != nil {
-		return
-	}
-	id, err = strconv.Atoi(resp)
+const (
+	cr        byte = 0x0d
+	lf        byte = 0x0a
+	leftParen byte = 0x28
+)
+
+func ProtocolId(c Connector) (id string, err error) {
+	id, err = sendRequest(c, "QPI")
 	return
 }
 
@@ -35,7 +35,7 @@ func InverterFirmwareVersion(c Connector) (version *FirmwareVersion, err error) 
 		return
 	}
 
-	version, err = parseFirmwareVersion(resp)
+	version, err = parseFirmwareVersion(resp, "VERFW")
 	return
 }
 
@@ -45,7 +45,7 @@ func SCC1FirmwareVersion(c Connector) (version *FirmwareVersion, err error) {
 		return
 	}
 
-	version, err = parseFirmwareVersion(resp)
+	version, err = parseFirmwareVersion(resp, "VERFW2")
 	return
 }
 
@@ -55,7 +55,7 @@ func SCC2FirmwareVersion(c Connector) (version *FirmwareVersion, err error) {
 		return
 	}
 
-	version, err = parseFirmwareVersion(resp)
+	version, err = parseFirmwareVersion(resp, "VERFW3")
 	return
 }
 
@@ -65,14 +65,14 @@ func SCC3FirmwareVersion(c Connector) (version *FirmwareVersion, err error) {
 		return
 	}
 
-	version, err = parseFirmwareVersion(resp)
+	version, err = parseFirmwareVersion(resp, "VERFW4")
 	return
 }
 
 func sendRequest(c Connector, req string) (resp string, err error) {
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)
-	reqBytes = append(reqBytes, 0x0d)
+	reqBytes = append(reqBytes, cr)
 	log.Println("Sending ", reqBytes)
 	err = c.Write(reqBytes)
 	if err != nil {
@@ -96,10 +96,10 @@ func sendRequest(c Connector, req string) (resp string, err error) {
 
 func validateResponse(read []byte) error {
 	readLen := len(read)
-	if read[0] != 0x28 {
+	if read[0] != leftParen {
 		return fmt.Errorf("invalid response start %x", read[0])
 	}
-	if read[readLen-1] != 0x0d {
+	if read[readLen-1] != cr {
 		return fmt.Errorf("invalid response end %x", read[readLen-1])
 	}
 	readCrc := read[readLen-3 : readLen-1]
@@ -115,18 +115,17 @@ func crc(data []byte) []byte {
 	i := crc16.Checksum(data, crc16.MakeBitsReversedTable(crc16.CCITTFalse))
 	bs := []byte{uint8(i >> 8), uint8(i & 0xff)}
 	for i := range bs {
-		if bs[i] == 0x0a || bs[i] == 0x0d || bs[i] == 0x28 {
+		if bs[i] == lf || bs[i] == cr || bs[i] == leftParen {
 			bs[i] += 1
 		}
 	}
 	return bs
 }
 
-func parseFirmwareVersion(s string) (*FirmwareVersion, error) {
-	const fwPrefix = "VERFW:"
-	parts := strings.Split(s, " ")
+func parseFirmwareVersion(resp string, fwPrefix string) (*FirmwareVersion, error) {
+	parts := strings.Split(resp, ":")
 	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid response %s", s)
+		return nil, fmt.Errorf("invalid response %s", resp)
 	}
 	if parts[0] != fwPrefix {
 		return nil, fmt.Errorf("invalid prefix %s", parts[0])
@@ -136,17 +135,6 @@ func parseFirmwareVersion(s string) (*FirmwareVersion, error) {
 	if len(version) != 2 {
 		return nil, fmt.Errorf("invalid version %s", parts[1])
 	}
-	if !isNumeric(version[0]) {
-		return nil, fmt.Errorf("invalid firmware series %s", version[1])
-	}
-	if !isNumeric(version[1]) {
-		return nil, fmt.Errorf("invalid firmware version number %s", version[1])
-	}
 
 	return &FirmwareVersion{version[0], version[1]}, nil
-}
-
-func isNumeric(s string) bool {
-	numeric, _ := regexp.MatchString("[0-9]+", s)
-	return numeric
 }
