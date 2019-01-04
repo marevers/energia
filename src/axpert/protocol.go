@@ -71,37 +71,37 @@ func SCC3FirmwareVersion(c Connector) (version *FirmwareVersion, err error) {
 }
 
 func CVModeChargingTime(c Connector) (chargingTime string, err error) {
-	chargingTime, err := sendRequest(c, "QCVT")
+	chargingTime, err = sendRequest(c, "QCVT")
 	return
 }
 
 func ChargingStage(c Connector) (chargingStage string, err error) {
-	chargingStage, err := sendRequest(c, "QCST")
+	chargingStage, err = sendRequest(c, "QCST")
 	return
 }
 
 func OutputMode(c Connector) (otputMode string, err error) {
-	otputMode, err := sendRequest(c, "QOPM")
+	otputMode, err = sendRequest(c, "QOPM")
 	return
 }
 
 func DSPBootstraped(c Connector) (hasBootstrap string, err error) {
-	hasBootstrap, err := sendRequest(c, "QBOOT")
+	hasBootstrap, err = sendRequest(c, "QBOOT")
 	return
 }
 
 func MaxSolarChargingCurrent(c Connector) (charginCurrent string, err error) {
-	charginCurrent, err := sendRequest(c, "QMSCHGCR")
+	charginCurrent, err = sendRequest(c, "QMSCHGCR")
 	return
 }
 
 func MaxUtilityChargingCurrent(c Connector) (charginCurrent string, err error) {
-	charginCurrent, err := sendRequest(c, "QMUCHGCR")
+	charginCurrent, err = sendRequest(c, "QMUCHGCR")
 	return
 }
 
 func MaxTotalChargingCurrent(c Connector) (charginCurrent string, err error) {
-	charginCurrent, err := sendRequest(c, "QMCHGCR")
+	charginCurrent, err = sendRequest(c, "QMCHGCR")
 	return
 }
 
