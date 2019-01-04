@@ -60,36 +60,36 @@ func main() {
 	}
 	fmt.Println("Charging stage: ", chargingStage)
 
-	outputMode, out := axpert.OutputMode(conn)
+	outputMode, err := axpert.OutputMode(conn)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Output Mode: ", outputMode)
 
-	bootstraped, out := axpert.DSPBootstraped(conn)
+	bootstraped, err := axpert.DSPBootstraped(conn)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("DSPBootstraped: ", bootstraped)
-
-	maxSolarChargingCurrent, out := axpert.MaxSolarChargingCurrent(conn)
+/*##
+	maxSolarChargingCurrent, err := axpert.MaxSolarChargingCurrent(conn)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("MaxSolarChargingCurrent: ", maxSolarChargingCurrent)
 
-	maxUtilityChargingCurrent, out := axpert.MaxUtilityChargingCurrent(conn)
+	maxUtilityChargingCurrent, err := axpert.MaxUtilityChargingCurrent(conn)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("MaxUtilityChargingCurrent: ", maxUtilityChargingCurrent)
 
-	maxTotalChargingCurrent, out := axpert.MaxTotalChargingCurrent(conn)
+	maxTotalChargingCurrent, err := axpert.MaxTotalChargingCurrent(conn)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("MaxTotalChargingCurrent: ", maxTotalChargingCurrent)
-
+*/
 	fmt.Println("Closing connection")
 	conn.Close()
 }
