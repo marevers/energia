@@ -91,6 +91,12 @@ func main() {
 	fmt.Println("MaxTotalChargingCurrent: ", maxTotalChargingCurrent)
 	*/
 
+	defaults, err := axpert.DefaultSettngs(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Default Settings: ", defaults)
+
 	ratingInfo, err := axpert.DeviceRatingInfo(conn)
 	if err != nil {
 		panic(err)
