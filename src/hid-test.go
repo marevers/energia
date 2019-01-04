@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/dbld-org/energia/src/axpert"
 	"github.com/kristoiv/hid"
 )
@@ -46,6 +47,48 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("FirmwareVersion: ", version)
+
+	chargingTime, err := axpert.CVModeChargingTime(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("CV Mode Charging Time: ", chargingTime)
+
+	chargingStage, err := axpert.ChargingStage(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Charging stage: ", chargingStage)
+
+	outputMode, out := axpert.OutputMode(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Output Mode: ", outputMode)
+
+	bootstraped, out := axpert.DSPBootstraped(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("DSPBootstraped: ", bootstraped)
+
+	maxSolarChargingCurrent, out := axpert.MaxSolarChargingCurrent(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("MaxSolarChargingCurrent: ", maxSolarChargingCurrent)
+
+	maxUtilityChargingCurrent, out := axpert.MaxUtilityChargingCurrent(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("MaxUtilityChargingCurrent: ", maxUtilityChargingCurrent)
+
+	maxTotalChargingCurrent, out := axpert.MaxTotalChargingCurrent(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("MaxTotalChargingCurrent: ", maxTotalChargingCurrent)
 
 	fmt.Println("Closing connection")
 	conn.Close()
