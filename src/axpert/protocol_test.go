@@ -11,10 +11,14 @@ func TestParseFirmwareVersion(t *testing.T) {
 	expectedFv := FirmwareVersion{"00072", "70"}
 
 	fv, err := parseFirmwareVersion(resp, "VERFW")
+	fmt.Println(fv)
+
 	if err != nil {
 		t.Error("expected no error, got", err)
 	}
-
+	if fv == nil {
+		t.Error("expected result, got nil")
+	}
 	if expectedFv != *fv {
 		t.Error("expected ", expectedFv, " got ", *fv)
 	}
@@ -37,8 +41,12 @@ func TestParseRatingInfo(t *testing.T) {
 
 	info, err := parseRatingInfo(resp)
 	fmt.Println(info)
+
 	if err != nil {
 		t.Error("expected no error, got", err)
+	}
+	if info == nil {
+		t.Error("expected result, got nil")
 	}
 	if expectedInfo != *info {
 		t.Error("expected ", expectedInfo, " got ", *info)
@@ -63,8 +71,13 @@ func TestParseDeviceFlags(t *testing.T) {
 	}
 
 	flags, err := parseDeviceFlags(resp)
+	fmt.Println(flags)
+
 	if err != nil {
 		t.Error("expected no error, got", err)
+	}
+	if flags == nil {
+		t.Error("expected result, got nil")
 	}
 	if expectedFlags != *flags {
 		t.Error("expected ", expectedFlags, " got ", *flags)
@@ -89,11 +102,65 @@ func TestParseDeviceFlagsWithLowercaseResponse(t *testing.T) {
 	}
 
 	flags, err := parseDeviceFlags(resp)
+	fmt.Println(flags)
+
 	if err != nil {
 		t.Error("expected no error, got", err)
+	}
+	if flags == nil {
+		t.Error("expected result, got nil")
 	}
 	if expectedFlags != *flags {
 		t.Error("expected ", expectedFlags, " got ", *flags)
 	}
 
+}
+
+func TestParseDeviceStatusParams(t *testing.T) {
+	resp := "230.0 50.0 231.0 49.9 0300 0250 010 460 57.50 012 100 0069 0014 103.8 57.45 00000 00110110 00 07 00856 010"
+
+	expectedParams := DeviceStatusParams{
+		GridVoltage:                       230.0,
+		GridFrequency:                     50.0,
+		ACOutputVoltage:                   231.0,
+		ACOutputFrequency:                 49.9,
+		ACOutputApparentPower:             300,
+		ACOutputActivePower:               250,
+		OutputLoadPercent:                 10,
+		BusVoltage:                        460,
+		BatteryVoltage:                    57.5,
+		BatteryChargingCurrent:            12,
+		BatteryCapacity:                   100,
+		HeatSinkTemperature:               69,
+		PVInputCurrent1:                   14,
+		PVInputVoltage1:                   103.8,
+		BatteryVoltageSCC1:                57.45,
+		BatteryDischargeCurrent:           0,
+		AddSBUPriorityVersion:             false,
+		ConfigStatusChanged:               false,
+		SCCFirmwareVersionUpdated:         true,
+		LoadOn:                            true,
+		BatteryVoltageSteadyWhileCharging: false,
+		ChargingOn:                        true,
+		SCC1ChargingOn:                    true,
+		ACChargingOn:                      false,
+		FanBatteryVoltageOffset:           0,
+		EEPROMVersion:                     "07",
+		PVChargingPower1:                  856,
+		FloatingModeCharging:              false,
+		SwitchOn:                          true,
+	}
+
+	params, err := parseDeviceStatusParams(resp)
+	fmt.Println(params)
+
+	if err != nil {
+		t.Error("expected no error, got", err)
+	}
+	if params == nil {
+		t.Error("expected result, got nil")
+	}
+	if expectedParams != *params {
+		t.Error("expected ", expectedParams, " got ", *params)
+	}
 }

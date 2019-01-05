@@ -262,6 +262,48 @@ func DeviceFlagStatus(c Connector) (flags *DeviceFlags, err error) {
 	return
 }
 
+type DeviceStatusParams struct {
+	GridVoltage                       float32
+	GridFrequency                     float32
+	ACOutputVoltage                   float32
+	ACOutputFrequency                 float32
+	ACOutputApparentPower             int
+	ACOutputActivePower               int
+	OutputLoadPercent                 int
+	BusVoltage                        int
+	BatteryVoltage                    float32
+	BatteryChargingCurrent            int
+	BatteryCapacity                   int
+	HeatSinkTemperature               int
+	PVInputCurrent1                   int
+	PVInputVoltage1                   float32
+	BatteryVoltageSCC1                float32
+	BatteryDischargeCurrent           int
+	AddSBUPriorityVersion             bool
+	ConfigStatusChanged               bool
+	SCCFirmwareVersionUpdated         bool
+	LoadOn                            bool
+	BatteryVoltageSteadyWhileCharging bool
+	ChargingOn                        bool
+	SCC1ChargingOn                    bool
+	ACChargingOn                      bool
+	FanBatteryVoltageOffset           int
+	EEPROMVersion                     string
+	PVChargingPower1                  int
+	FloatingModeCharging              bool
+	SwitchOn                          bool
+}
+
+func DeviceGeneralStatus(c Connector) (params *DeviceStatusParams, err error) {
+	resp, err := sendRequest(c, "QPIGS")
+	if err != nil {
+		return
+	}
+
+	params, err = parseDeviceStatusParams(resp)
+	return
+}
+
 func sendRequest(c Connector, req string) (resp string, err error) {
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)
@@ -531,4 +573,146 @@ func parseDeviceFlags(resp string) (*DeviceFlags, error) {
 		}
 	}
 	return &flags, nil
+}
+
+func parseDeviceStatusParams(resp string) (*DeviceStatusParams, error) {
+	parts := strings.Split(resp, " ")
+	if len(parts) < 21 {
+		return nil, fmt.Errorf("response too short: %s", resp)
+	}
+
+	params := DeviceStatusParams{}
+
+	f, err := strconv.ParseFloat(parts[0], 32)
+	if err != nil {
+		return nil, err
+	}
+	params.GridVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[1], 32)
+	if err != nil {
+		return nil, err
+	}
+	params.GridFrequency = float32(f)
+
+	f, err = strconv.ParseFloat(parts[2], 32)
+	if err != nil {
+		return nil, err
+	}
+	params.ACOutputVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[3], 32)
+	if err != nil {
+		return nil, err
+	}
+	params.ACOutputFrequency = float32(f)
+
+	i, err := strconv.Atoi(parts[4])
+	if err != nil {
+		return nil, err
+	}
+	params.ACOutputApparentPower = i
+
+	i, err = strconv.Atoi(parts[5])
+	if err != nil {
+		return nil, err
+	}
+	params.ACOutputActivePower = i
+
+	i, err = strconv.Atoi(parts[6])
+	if err != nil {
+		return nil, err
+	}
+	params.OutputLoadPercent = i
+
+	i, err = strconv.Atoi(parts[7])
+	if err != nil {
+		return nil, err
+	}
+	params.BusVoltage = i
+
+	f, err = strconv.ParseFloat(parts[8], 32)
+	if err != nil {
+		return nil, err
+	}
+	params.BatteryVoltage = float32(f)
+
+	i, err = strconv.Atoi(parts[9])
+	if err != nil {
+		return nil, err
+	}
+	params.BatteryChargingCurrent = i
+
+	i, err = strconv.Atoi(parts[10])
+	if err != nil {
+		return nil, err
+	}
+	params.BatteryCapacity = i
+
+	i, err = strconv.Atoi(parts[11])
+	if err != nil {
+		return nil, err
+	}
+	params.HeatSinkTemperature = i
+
+	i, err = strconv.Atoi(parts[12])
+	if err != nil {
+		return nil, err
+	}
+	params.PVInputCurrent1 = i
+
+	f, err = strconv.ParseFloat(parts[13], 32)
+	if err != nil {
+		return nil, err
+	}
+	params.PVInputVoltage1 = float32(f)
+
+	f, err = strconv.ParseFloat(parts[14], 32)
+	if err != nil {
+		return nil, err
+	}
+	params.BatteryVoltageSCC1 = float32(f)
+
+	i, err = strconv.Atoi(parts[15])
+	if err != nil {
+		return nil, err
+	}
+	params.BatteryDischargeCurrent = i
+
+	b, err := strconv.ParseUint(parts[16], 2, 8)
+	if err != nil {
+		return nil, err
+	}
+
+	sflags := uint8(b)
+	params.AddSBUPriorityVersion = sflags&0x80 == 0x80
+	params.ConfigStatusChanged = sflags&0x40 == 0x40
+	params.SCCFirmwareVersionUpdated = sflags&0x20 == 0x20
+	params.LoadOn = sflags&0x10 == 0x10
+	params.BatteryVoltageSteadyWhileCharging = sflags&0x08 == 0x08
+	params.ChargingOn = sflags&0x04 == 0x04
+	params.SCC1ChargingOn = sflags&0x02 == 0x02
+	params.ACChargingOn = sflags&0x01 == 0x01
+
+	i, err = strconv.Atoi(parts[17])
+	if err != nil {
+		return nil, err
+	}
+	params.FanBatteryVoltageOffset = i
+
+	params.EEPROMVersion = parts[18]
+
+	i, err = strconv.Atoi(parts[19])
+	if err != nil {
+		return nil, err
+	}
+	params.PVChargingPower1 = i
+
+	if len(parts[20]) < 3 {
+		return nil, fmt.Errorf("invalid status %s", parts[20])
+	}
+	params.FloatingModeCharging = parts[20][0] == '1'
+	params.SwitchOn = parts[20][1] == '1'
+
+	return &params, nil
 }
