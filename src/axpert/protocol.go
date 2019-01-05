@@ -494,7 +494,7 @@ func parseRatingInfo(resp string) (*RatingInfo, error) {
 }
 
 func parseDeviceFlags(resp string) (*DeviceFlags, error) {
-	flags := &DeviceFlags{}
+	flags := DeviceFlags{}
 
 	if len(resp) < 2 {
 		return nil, fmt.Errorf("response too short: %s", resp)
@@ -530,5 +530,5 @@ func parseDeviceFlags(resp string) (*DeviceFlags, error) {
 			}
 		}
 	}
-	return flags, nil
+	return &flags, nil
 }
