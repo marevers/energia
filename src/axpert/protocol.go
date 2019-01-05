@@ -503,25 +503,25 @@ func parseDeviceFlags(resp string) (*DeviceFlags, error) {
 		value := FlagEnabled
 		for i := 1; i < len(resp); i++ {
 			switch resp[i] {
-			case 'A':
+			case 'A', 'a':
 				flags.Buzzer = value
-			case 'B':
+			case 'B', 'b':
 				flags.OverloadBypass = value
-			case 'J':
+			case 'J', 'j':
 				flags.PowerSaving = value
-			case 'K':
+			case 'K', 'k':
 				flags.DisplayTimeout = value
-			case 'L':
+			case 'L', 'l':
 				flags.DataLogPopUp = value
-			case 'U':
+			case 'U', 'u':
 				flags.OverloadRestart = value
-			case 'V':
+			case 'V', 'v':
 				flags.OverTemperatureRestart = value
-			case 'X':
+			case 'X', 'x':
 				flags.BacklightOn = value
-			case 'Y':
+			case 'Y', 'y':
 				flags.PrimarySourceInterruptAlarm = value
-			case 'Z':
+			case 'Z', 'z':
 				flags.FaultCodeRecord = value
 			case 'D':
 				value = FlagDisabled
