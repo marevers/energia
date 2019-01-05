@@ -185,7 +185,7 @@ type PVPowerBalance uint8
 
 const (
 	InputCurrentIsChargedCurrent PVPowerBalance = iota
-	InputPowerIsChargedPowerAndLoadPower
+	InputPowerIsChargedPowerPlusLoadPower
 )
 
 type RatingInfo struct {
