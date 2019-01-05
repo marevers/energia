@@ -106,6 +106,11 @@ func MaxTotalChargingCurrent(c Connector) (charginCurrent string, err error) {
 	return
 }
 
+func DefaultSettings(c Connector) (defaultSettings string, err error) {
+	defaultSettings, err = sendRequest(c, "QDI")
+	return
+}
+
 //go:generate enumer -type=BatteryType -json
 type BatteryType uint8
 
