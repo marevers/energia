@@ -315,9 +315,17 @@ func DeviceGeneralStatus(c Connector) (params *DeviceStatusParams, err error) {
 
 	params, err = parseDeviceStatusParams(resp)
 
-	resp, err = sendRequest(c, "QPIGS2")
+	return
+}
+
+func DeviceGeneralStatus2(c Connector, p *DeviceStatusParams) (params *DeviceStatusParams, err error) {
+	resp, err := sendRequest(c, "QPIGS2")
 	if err != nil {
 		return
+	}
+
+	if p != nil {
+		params = p
 	}
 
 	params, err = parseDeviceStatusParams2(resp, params)

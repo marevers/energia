@@ -115,6 +115,14 @@ func main() {
 	}
 	fmt.Println("Device status params ", params)
 
+	// Remove due to timeout error
+	//params, err = axpert.DeviceGeneralStatus2(conn, params)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//fmt.Println("All Device status params ", params)
+	//
+
 	mode, err := axpert.DeviceMode(conn)
 	if err != nil {
 		panic(err)
