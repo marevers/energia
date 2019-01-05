@@ -278,6 +278,12 @@ type DeviceStatusParams struct {
 	PVInputCurrent1                   int
 	PVInputVoltage1                   float32
 	BatteryVoltageSCC1                float32
+	PVInputCurrent2                   int
+	PVInputVoltage2                   float32
+	BatteryVoltageSCC2                float32
+	PVInputCurrent3                   int
+	PVInputVoltage3                   float32
+	BatteryVoltageSCC3                float32
 	BatteryDischargeCurrent           int
 	AddSBUPriorityVersion             bool
 	ConfigStatusChanged               bool
@@ -286,12 +292,19 @@ type DeviceStatusParams struct {
 	BatteryVoltageSteadyWhileCharging bool
 	ChargingOn                        bool
 	SCC1ChargingOn                    bool
+	SCC2ChargingOn                    bool
+	SCC3ChargingOn                    bool
 	ACChargingOn                      bool
 	FanBatteryVoltageOffset           int
 	EEPROMVersion                     string
 	PVChargingPower1                  int
+	PVChargingPower2                  int
+	PVChargingPower3                  int
+	PVTotalChargingPower              int
 	FloatingModeCharging              bool
 	SwitchOn                          bool
+	ACChargingCurrent                 int
+	ACChargingPower                   int
 }
 
 func DeviceGeneralStatus(c Connector) (params *DeviceStatusParams, err error) {
@@ -301,6 +314,14 @@ func DeviceGeneralStatus(c Connector) (params *DeviceStatusParams, err error) {
 	}
 
 	params, err = parseDeviceStatusParams(resp)
+
+	resp, err = sendRequest(c, "QPIGS2")
+	if err != nil {
+		return
+	}
+
+	params, err = parseDeviceStatusParams2(resp, params)
+
 	return
 }
 
@@ -720,4 +741,88 @@ func parseDeviceStatusParams(resp string) (*DeviceStatusParams, error) {
 	params.SwitchOn = parts[20][1] == '1'
 
 	return &params, nil
+}
+
+func parseDeviceStatusParams2(resp string, params *DeviceStatusParams) (*DeviceStatusParams, error) {
+	parts := strings.Split(resp, " ")
+	if len(parts) < 12 {
+		return params, fmt.Errorf("response too short: %s", resp)
+	}
+
+	i, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return params, err
+	}
+	params.PVInputCurrent2 = i
+
+	f, err := strconv.ParseFloat(parts[1], 32)
+	if err != nil {
+		return params, err
+	}
+	params.PVInputVoltage2 = float32(f)
+
+	f, err = strconv.ParseFloat(parts[2], 32)
+	if err != nil {
+		return params, err
+	}
+	params.BatteryVoltageSCC2 = float32(f)
+
+	i, err = strconv.Atoi(parts[3])
+	if err != nil {
+		return params, err
+	}
+	params.PVChargingPower2 = i
+
+	b, err := strconv.ParseUint(parts[4], 2, 8)
+	if err != nil {
+		return params, err
+	}
+
+	sflags := uint8(b)
+	params.SCC2ChargingOn = sflags&0x80 == 0x80
+	params.SCC3ChargingOn = sflags&0x40 == 0x40
+
+	i, err = strconv.Atoi(parts[5])
+	if err != nil {
+		return params, err
+	}
+	params.ACChargingCurrent = i
+
+	i, err = strconv.Atoi(parts[6])
+	if err != nil {
+		return params, err
+	}
+	params.ACChargingPower = i
+
+	i, err = strconv.Atoi(parts[7])
+	if err != nil {
+		return params, err
+	}
+	params.PVInputCurrent3 = i
+
+	f, err = strconv.ParseFloat(parts[8], 32)
+	if err != nil {
+		return params, err
+	}
+	params.PVInputVoltage3 = float32(f)
+
+	f, err = strconv.ParseFloat(parts[9], 32)
+	if err != nil {
+		return params, err
+	}
+	params.BatteryVoltageSCC3 = float32(f)
+
+	i, err = strconv.Atoi(parts[10])
+	if err != nil {
+		return params, err
+	}
+	params.PVChargingPower3 = i
+
+	i, err = strconv.Atoi(parts[11])
+	if err != nil {
+		return params, err
+	}
+	params.PVTotalChargingPower = i
+
+	return params, nil
 }

@@ -164,3 +164,138 @@ func TestParseDeviceStatusParams(t *testing.T) {
 		t.Error("expected ", expectedParams, " got ", *params)
 	}
 }
+
+func TestParseDeviceStatusParams2(t *testing.T) {
+	resp := "0012 105.2 52.5 00840 11000000 0021 0900 0015 100.2 48.48 0790 01890"
+
+	expectedParams := DeviceStatusParams{
+		GridVoltage:                       0,
+		GridFrequency:                     0,
+		ACOutputVoltage:                   0,
+		ACOutputFrequency:                 0,
+		ACOutputApparentPower:             0,
+		ACOutputActivePower:               0,
+		OutputLoadPercent:                 0,
+		BusVoltage:                        0,
+		BatteryVoltage:                    0,
+		BatteryChargingCurrent:            0,
+		BatteryCapacity:                   0,
+		HeatSinkTemperature:               0,
+		PVInputCurrent1:                   0,
+		PVInputVoltage1:                   0,
+		BatteryVoltageSCC1:                0,
+		PVInputCurrent2:                   12,
+		PVInputVoltage2:                   105.2,
+		BatteryVoltageSCC2:                52.5,
+		PVInputCurrent3:                   15,
+		PVInputVoltage3:                   100.2,
+		BatteryVoltageSCC3:                48.48,
+		BatteryDischargeCurrent:           0,
+		AddSBUPriorityVersion:             false,
+		ConfigStatusChanged:               false,
+		SCCFirmwareVersionUpdated:         false,
+		LoadOn:                            false,
+		BatteryVoltageSteadyWhileCharging: false,
+		ChargingOn:                        false,
+		SCC1ChargingOn:                    false,
+		SCC2ChargingOn:                    true,
+		SCC3ChargingOn:                    true,
+		ACChargingOn:                      false,
+		FanBatteryVoltageOffset:           0,
+		EEPROMVersion:                     "",
+		PVChargingPower1:                  0,
+		PVChargingPower2:                  840,
+		PVChargingPower3:                  790,
+		PVTotalChargingPower:              1890,
+		FloatingModeCharging:              false,
+		SwitchOn:                          false,
+		ACChargingCurrent:                 21,
+		ACChargingPower:                   900,
+	}
+
+	params, err := parseDeviceStatusParams2(resp, &DeviceStatusParams{})
+	fmt.Println(params)
+
+	if err != nil {
+		t.Error("expected no error, got", err)
+	}
+	if params == nil {
+		t.Error("expected result, got nil")
+	}
+	if expectedParams != *params {
+		t.Error("expected ", expectedParams, " got ", *params)
+	}
+}
+
+func TestParseAllStatusParams(t *testing.T) {
+	resp1 := "230.0 50.0 231.0 49.9 0300 0250 010 460 57.50 012 100 0069 0014 103.8 57.45 00000 00110110 00 07 00856 010"
+	resp2 := "0012 105.2 52.5 00840 11000000 0021 0900 0015 100.2 48.48 0790 01890"
+
+	expectedParams := DeviceStatusParams{
+		GridVoltage:                       230.0,
+		GridFrequency:                     50.0,
+		ACOutputVoltage:                   231.0,
+		ACOutputFrequency:                 49.9,
+		ACOutputApparentPower:             300,
+		ACOutputActivePower:               250,
+		OutputLoadPercent:                 10,
+		BusVoltage:                        460,
+		BatteryVoltage:                    57.5,
+		BatteryChargingCurrent:            12,
+		BatteryCapacity:                   100,
+		HeatSinkTemperature:               69,
+		PVInputCurrent1:                   14,
+		PVInputVoltage1:                   103.8,
+		BatteryVoltageSCC1:                57.45,
+		PVInputCurrent2:                   12,
+		PVInputVoltage2:                   105.2,
+		BatteryVoltageSCC2:                52.5,
+		PVInputCurrent3:                   15,
+		PVInputVoltage3:                   100.2,
+		BatteryVoltageSCC3:                48.48,
+		BatteryDischargeCurrent:           0,
+		AddSBUPriorityVersion:             false,
+		ConfigStatusChanged:               false,
+		SCCFirmwareVersionUpdated:         true,
+		LoadOn:                            true,
+		BatteryVoltageSteadyWhileCharging: false,
+		ChargingOn:                        true,
+		SCC1ChargingOn:                    true,
+		SCC2ChargingOn:                    true,
+		SCC3ChargingOn:                    true,
+		ACChargingOn:                      false,
+		FanBatteryVoltageOffset:           0,
+		EEPROMVersion:                     "07",
+		PVChargingPower1:                  856,
+		PVChargingPower2:                  840,
+		PVChargingPower3:                  790,
+		PVTotalChargingPower:              1890,
+		FloatingModeCharging:              false,
+		SwitchOn:                          true,
+		ACChargingCurrent:                 21,
+		ACChargingPower:                   900,
+	}
+
+	params, err := parseDeviceStatusParams(resp1)
+	fmt.Println(params)
+
+	if err != nil {
+		t.Error("expected no error, got", err)
+	}
+	if params == nil {
+		t.Error("expected result, got nil")
+	}
+
+	params, err = parseDeviceStatusParams2(resp2, params)
+	fmt.Println(params)
+
+	if err != nil {
+		t.Error("expected no error, got", err)
+	}
+	if params == nil {
+		t.Error("expected result, got nil")
+	}
+	if expectedParams != *params {
+		t.Error("expected ", expectedParams, " got ", *params)
+	}
+}
