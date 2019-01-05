@@ -231,6 +231,37 @@ func DeviceRatingInfo(c Connector) (ratingInfo *RatingInfo, err error) {
 	return
 }
 
+//go:generate enumer -type=FlagStatus -json
+type FlagStatus uint8
+
+const (
+	FlagDisabled FlagStatus = iota
+	FlagEnabled
+)
+
+type DeviceFlags struct {
+	Buzzer                      FlagStatus
+	OverloadBypass              FlagStatus
+	PowerSaving                 FlagStatus
+	DisplayTimeout              FlagStatus
+	OverloadRestart             FlagStatus
+	OverTemperatureRestart      FlagStatus
+	BacklightOn                 FlagStatus
+	PrimarySourceInterruptAlarm FlagStatus
+	FaultCodeRecord             FlagStatus
+	DataLogPopUp                FlagStatus
+}
+
+func DeviceFlagStatus(c Connector) (flags *DeviceFlags, err error) {
+	resp, err := sendRequest(c, "QFLAG")
+	if err != nil {
+		return
+	}
+
+	flags, err = parseDeviceFlags(resp)
+	return
+}
+
 func sendRequest(c Connector, req string) (resp string, err error) {
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)
@@ -460,4 +491,44 @@ func parseRatingInfo(resp string) (*RatingInfo, error) {
 	info.PVPowerBalance = PVPowerBalance(b)
 
 	return &info, nil
+}
+
+func parseDeviceFlags(resp string) (*DeviceFlags, error) {
+	flags := &DeviceFlags{}
+
+	if len(resp) < 2 {
+		return nil, fmt.Errorf("response too short: %s", resp)
+	}
+	if strings.HasPrefix(resp, "E") {
+		value := FlagEnabled
+		for i := 1; i < len(resp); i++ {
+			switch resp[i] {
+			case 'A':
+				flags.Buzzer = value
+			case 'B':
+				flags.OverloadBypass = value
+			case 'J':
+				flags.PowerSaving = value
+			case 'K':
+				flags.DisplayTimeout = value
+			case 'L':
+				flags.DataLogPopUp = value
+			case 'U':
+				flags.OverloadRestart = value
+			case 'V':
+				flags.OverTemperatureRestart = value
+			case 'X':
+				flags.BacklightOn = value
+			case 'Y':
+				flags.PrimarySourceInterruptAlarm = value
+			case 'Z':
+				flags.FaultCodeRecord = value
+			case 'D':
+				value = FlagDisabled
+			default:
+				return nil, fmt.Errorf("unknown flag %c", resp[i])
+			}
+		}
+	}
+	return flags, nil
 }

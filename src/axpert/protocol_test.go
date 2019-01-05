@@ -16,7 +16,7 @@ func TestParseFirmwareVersion(t *testing.T) {
 	}
 
 	if expectedFv != *fv {
-		t.Error("expected ", expectedFv, " got ", fv)
+		t.Error("expected ", expectedFv, " got ", *fv)
 	}
 }
 
@@ -41,7 +41,33 @@ func TestParseRatingInfo(t *testing.T) {
 		t.Error("expected no error, got", err)
 	}
 	if expectedInfo != *info {
-		t.Error("expected ", expectedInfo, " got ", info)
+		t.Error("expected ", expectedInfo, " got ", *info)
+	}
+
+}
+
+func TestParseDeviceFlags(t *testing.T) {
+	resp := "EABJKLDUVXYZ"
+
+	expectedFlags := DeviceFlags{
+		Buzzer:                      FlagEnabled,
+		OverloadBypass:              FlagEnabled,
+		PowerSaving:                 FlagEnabled,
+		DisplayTimeout:              FlagEnabled,
+		OverloadRestart:             FlagDisabled,
+		OverTemperatureRestart:      FlagDisabled,
+		BacklightOn:                 FlagDisabled,
+		PrimarySourceInterruptAlarm: FlagDisabled,
+		FaultCodeRecord:             FlagDisabled,
+		DataLogPopUp:                FlagEnabled,
+	}
+
+	flags, err := parseDeviceFlags(resp)
+	if err != nil {
+		t.Error("expected no error, got", err)
+	}
+	if expectedFlags != *flags {
+		t.Error("expected ", expectedFlags, " got ", *flags)
 	}
 
 }
