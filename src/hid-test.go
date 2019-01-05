@@ -103,6 +103,24 @@ func main() {
 	}
 	fmt.Println("Device rating info ", ratingInfo)
 
+	flags, err := axpert.DeviceFlagStatus(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Device status flags ", flags)
+
+	params, err := axpert.DeviceGeneralStatus(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Device status params ", params)
+
+	mode, err := axpert.DeviceMode(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Device mode ", mode)
+
 	fmt.Println("Closing connection")
 	conn.Close()
 }
