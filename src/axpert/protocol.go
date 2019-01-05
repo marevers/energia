@@ -381,7 +381,7 @@ func validateResponse(read []byte) error {
 }
 
 func crc(data []byte) []byte {
-	i := crc16.Checksum(data, crc16.MakeBitsReversedTable(crc16.CCITTFalse))
+	i := crc16.Checksum(data, crc16.CCITTFalseTable)
 	bs := []byte{uint8(i >> 8), uint8(i & 0xff)}
 	for i := range bs {
 		if bs[i] == lf || bs[i] == cr || bs[i] == leftParen {
