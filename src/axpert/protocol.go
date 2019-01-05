@@ -304,6 +304,11 @@ func DeviceGeneralStatus(c Connector) (params *DeviceStatusParams, err error) {
 	return
 }
 
+func DeviceMode(c Connector) (mode string, err error) {
+	mode, err = sendRequest(c, "QMOD")
+	return
+}
+
 func sendRequest(c Connector, req string) (resp string, err error) {
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)
