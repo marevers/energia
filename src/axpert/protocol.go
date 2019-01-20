@@ -338,7 +338,7 @@ func DeviceMode(c Connector) (mode string, err error) {
 	return
 }
 
-//go:generate enumer -type=FlagStatus -json
+//go:generate enumer -type=DeviceWarning -json
 type DeviceWarning uint8
 
 const (
