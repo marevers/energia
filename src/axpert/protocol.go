@@ -338,6 +338,60 @@ func DeviceMode(c Connector) (mode string, err error) {
 	return
 }
 
+//go:generate enumer -type=FlagStatus -json
+type DeviceWarning uint8
+
+const (
+	WarnReserved DeviceWarning = iota
+	WarnInverterFault
+	WarnBusOver
+	WarnBusUnder
+	WarnBusSoftFail
+	WarnLineFail
+	WarnOPVShort
+	WarnInverterVoltageLow
+	WarnInverrterVoltageHigh
+	WarnOverTemperature
+	WarnFanLocked
+	WarnBatteryVoltageHigh
+	WarnBatteryLowAlarm
+	WarnReservedOvercharge
+	WarnBatteryShutdown
+	WarnReservedBatteryDerating
+	WarnOverload
+	WarnEEPROMFault
+	WarnInverterOverCurrent
+	WarnInverterSoftFail
+	WarnSelfTestFail
+	WarnOPDCVoltageOver
+	WarnBatteryOpen
+	WarnCurrentSensorFail
+	WarnBatteryShort
+	WarnPowerLimit
+	WarnPVVoltageHigh
+	WarnMPPTOverloadFault
+	WarnMPPTOverloadWarning
+	WarnBatteryTooLowToCharge
+	WarnPVVoltageHigh2
+	WarnMPPTOverloadFault2
+	WarnMPPTOverloadWarning2
+	WarnBatteryTooLowToCharge2
+	WarnPVVoltageHigh3
+	WarnMPPTOverloadFault3
+	WarnMPPTOverloadWarning3
+	WarnBatteryTooLowToCharge3
+)
+
+func WarningStatus(c Connector) (warnings []DeviceWarning, err error) {
+	status, err := sendRequest(c, "QPIWS")
+	if err != nil {
+		return
+	}
+
+	warnings, err = parseWarnings(status)
+	return
+}
+
 func sendRequest(c Connector, req string) (resp string, err error) {
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)
@@ -833,4 +887,26 @@ func parseDeviceStatusParams2(resp string, params *DeviceStatusParams) (*DeviceS
 	params.PVTotalChargingPower = i
 
 	return params, nil
+}
+
+func parseWarnings(status string) ([]DeviceWarning, error) {
+	if len(status) < 32 {
+		return nil, fmt.Errorf("not enough status flags, %d", len(status))
+	}
+
+	if len(status) > 38 {
+		return nil, fmt.Errorf("too many status flags, %d", len(status))
+	}
+
+	warnings := make([]DeviceWarning, 0)
+	for i, c := range status {
+		switch c {
+		case '1':
+			warnings = append(warnings, DeviceWarning(i))
+		default:
+			continue
+		}
+	}
+
+	return warnings, nil
 }

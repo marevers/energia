@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
-	"github.com/dbld-org/energia/src/axpert"
 	"github.com/kristoiv/hid"
+
+	"github.com/dbld-org/energia/src/axpert"
 )
 
 func main() {
@@ -46,7 +48,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("FirmwareVersion: ", version)
+	jsonVersion, err := json.Marshal(version)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("FirmwareVersion: ", jsonVersion)
 
 	chargingTime, err := axpert.CVModeChargingTime(conn)
 	if err != nil {
@@ -128,6 +134,12 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("Device mode ", mode)
+
+	warnings, err := axpert.WarningStatus(conn)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Warning status ", warnings)
 
 	fmt.Println("Closing connection")
 	conn.Close()

@@ -299,3 +299,51 @@ func TestParseAllStatusParams(t *testing.T) {
 		t.Error("expected ", expectedParams, " got ", *params)
 	}
 }
+
+func TestParseWarningsAllZero(t *testing.T) {
+	resp := "00000000000000000000000000000000"
+
+	expected := make([]DeviceWarning, 0)
+
+	warnings, err := parseWarnings(resp)
+	if err != nil {
+		t.Error("expected no error, got", err)
+	}
+	if warnings == nil {
+		t.Error("expected result, got nil")
+	}
+
+	if !Equal(expected, warnings) {
+		t.Error("expected ", expected, " got ", warnings)
+	}
+}
+
+func TestParseWarnings(t *testing.T) {
+	resp := "00010000000000100000000000000000"
+
+	expected := []DeviceWarning{WarnBusUnder, WarnBatteryShutdown}
+
+	warnings, err := parseWarnings(resp)
+	if err != nil {
+		t.Error("expected no error, got", err)
+	}
+	if warnings == nil {
+		t.Error("expected result, got nil")
+	}
+
+	if !Equal(expected, warnings) {
+		t.Error("expected ", expected, " got ", warnings)
+	}
+}
+
+func Equal(a, b []DeviceWarning) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
