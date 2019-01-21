@@ -22,9 +22,9 @@ const mqttPort = "1883"
 const mqttTopic = "axpert/data"
 
 type messageData struct {
-	Timestamp    time.Time
-	MesssageType string
-	Data         interface{}
+	Timestamp   time.Time
+	MessageType string
+	Data        interface{}
 }
 
 func main() {
@@ -63,7 +63,7 @@ func main() {
 				panic(err)
 			}
 			m := map[string]string{"Mode": mode}
-			msgData := messageData{Timestamp: t, MesssageType: "Mode", Data: m}
+			msgData := messageData{Timestamp: t, MessageType: "Mode", Data: m}
 			err = sendMessage(msgData, client)
 			if err != nil {
 				panic(err)
@@ -73,7 +73,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			msgData = messageData{Timestamp: t, MesssageType: "Status", Data: status}
+			msgData = messageData{Timestamp: t, MessageType: "Status", Data: status}
 			err = sendMessage(msgData, client)
 			if err != nil {
 				panic(err)
@@ -83,14 +83,14 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			msgData = messageData{Timestamp: t, MesssageType: "Warnings", Data: warnings}
+			msgData = messageData{Timestamp: t, MessageType: "Warnings", Data: warnings}
 			err = sendMessage(msgData, client)
 			if err != nil {
 				panic(err)
 			}
 
 			flags, err := axpert.DeviceFlagStatus(uc)
-			msgData = messageData{Timestamp: t, MesssageType: "Flags", Data: flags}
+			msgData = messageData{Timestamp: t, MessageType: "Flags", Data: flags}
 			err = sendMessage(msgData, client)
 			if err != nil {
 				panic(err)
