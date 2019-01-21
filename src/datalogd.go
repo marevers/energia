@@ -32,6 +32,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = uc.Open()
+	if err != nil {
+		panic(err)
+	}
 	defer uc.Close()
 	fmt.Println("connected to ", path)
 
