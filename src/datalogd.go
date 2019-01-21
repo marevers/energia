@@ -96,6 +96,13 @@ func main() {
 				panic(err)
 			}
 
+			ratingInfo, err := axpert.DeviceRatingInfo(uc)
+			msgData = messageData{Timestamp: t, MessageType: "RatingInfo", Data: ratingInfo}
+			err = sendMessage(msgData, client)
+			if err != nil {
+				panic(err)
+			}
+
 		}
 	}()
 
