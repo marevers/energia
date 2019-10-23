@@ -10,7 +10,7 @@ import (
 
 	"github.com/eclipse/paho.mqtt.golang"
 
-	"github.com/dbld-org/energia/src/axpert"
+	"github.com/dbld-org/energia/axpert"
 )
 
 // TODO: These should be configurable

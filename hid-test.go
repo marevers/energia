@@ -6,7 +6,7 @@ import (
 
 	"github.com/kristoiv/hid"
 
-	"github.com/dbld-org/energia/src/axpert"
+	"github.com/dbld-org/energia/axpert"
 )
 
 func main() {
