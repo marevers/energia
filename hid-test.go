@@ -52,7 +52,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("FirmwareVersion: ", jsonVersion)
+	fmt.Println("FirmwareVersion: ", string(jsonVersion))
 
 	chargingTime, err := axpert.CVModeChargingTime(conn)
 	if err != nil {
@@ -72,11 +72,11 @@ func main() {
 	}
 	fmt.Println("Output Mode: ", outputMode)
 
-	bootstraped, err := axpert.DSPBootstraped(conn)
+	bootstrapped, err := axpert.DIPBootstrapped(conn)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("DSPBootstraped: ", bootstraped)
+	fmt.Println("DIPBootstrapped: ", bootstrapped)
 	/*##
 	maxSolarChargingCurrent, err := axpert.MaxSolarChargingCurrent(conn)
 	if err != nil {
@@ -107,19 +107,31 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Device rating info ", ratingInfo)
+	jsonRating, err := json.Marshal(ratingInfo)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Device rating info ", string(jsonRating))
 
 	flags, err := axpert.DeviceFlagStatus(conn)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Device status flags ", flags)
+	jsonFlags, err := json.Marshal(flags)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Device status flags ", string(jsonFlags))
 
 	params, err := axpert.DeviceGeneralStatus(conn)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Device status params ", params)
+	jsonParams, err := json.Marshal(params)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Device status params ", string(jsonParams))
 
 	// Remove due to timeout error
 	//params, err = axpert.DeviceGeneralStatus2(conn, params)

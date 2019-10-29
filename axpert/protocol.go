@@ -86,7 +86,7 @@ func DeviceOutputMode(c Connector) (otputMode string, err error) {
 	return
 }
 
-func DSPBootstraped(c Connector) (hasBootstrap string, err error) {
+func DIPBootstrapped(c Connector) (hasBootstrap string, err error) {
 	hasBootstrap, err = sendRequest(c, "QBOOT")
 	return
 }
