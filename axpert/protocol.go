@@ -392,6 +392,57 @@ func WarningStatus(c Connector) (warnings []DeviceWarning, err error) {
 	return
 }
 
+func SetDeviceFlags(c Connector, flags *DeviceFlags) error {
+	enableCommand, disableCommand := formatDeviceFlags(flags)
+	resp, err := sendRequest(c, enableCommand)
+	if err != nil {
+		return err
+	}
+	if resp == "NAK" {
+		return fmt.Errorf("command not acknowledged, %v", enableCommand)
+	}
+
+	resp, err = sendRequest(c, disableCommand)
+	if err != nil {
+		return err
+	}
+	if resp == "NAK" {
+		return fmt.Errorf("command not acknowledged, %v", disableCommand)
+	}
+
+	return nil
+}
+
+func formatDeviceFlags(flags *DeviceFlags) (enableCommand string, disableCommand string) {
+	enabled := new(strings.Builder)
+	enabled.WriteString("PE")
+	disabled := new(strings.Builder)
+	disabled.WriteString("PD")
+
+	appendFlag(flags.Buzzer, 'A', enabled, disabled)
+	appendFlag(flags.OverloadBypass, 'B', enabled, disabled)
+	appendFlag(flags.PowerSaving, 'J', enabled, disabled)
+	appendFlag(flags.DisplayTimeout, 'K', enabled, disabled)
+	appendFlag(flags.OverloadRestart, 'U', enabled, disabled)
+	appendFlag(flags.OverTemperatureRestart, 'V', enabled, disabled)
+	appendFlag(flags.BacklightOn, 'X', enabled, disabled)
+	appendFlag(flags.PrimarySourceInterruptAlarm, 'Y', enabled, disabled)
+	appendFlag(flags.FaultCodeRecord, 'Z', enabled, disabled)
+	appendFlag(flags.DataLogPopUp, 'L', enabled, disabled)
+
+	enableCommand = enabled.String()
+	disableCommand = disabled.String()
+	return
+}
+
+func appendFlag(status FlagStatus, flagChar byte, enabled *strings.Builder, disabled *strings.Builder) {
+	if status == FlagEnabled {
+		enabled.WriteByte(flagChar)
+	} else {
+		disabled.WriteByte(flagChar)
+	}
+}
+
 func sendRequest(c Connector, req string) (resp string, err error) {
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)

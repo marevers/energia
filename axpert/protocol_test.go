@@ -347,3 +347,33 @@ func Equal(a, b []DeviceWarning) bool {
 	}
 	return true
 }
+
+func TestFormatDeviceFlags(t *testing.T) {
+	flags := DeviceFlags{
+		Buzzer:                      FlagEnabled,
+		OverloadBypass:              FlagEnabled,
+		PowerSaving:                 FlagEnabled,
+		DisplayTimeout:              FlagEnabled,
+		OverloadRestart:             FlagDisabled,
+		OverTemperatureRestart:      FlagDisabled,
+		BacklightOn:                 FlagDisabled,
+		PrimarySourceInterruptAlarm: FlagDisabled,
+		FaultCodeRecord:             FlagDisabled,
+		DataLogPopUp:                FlagEnabled,
+	}
+
+	expectedEnable := "PEABJKL"
+	expectedDisable := "PDUVXYZ"
+
+	enable, disable := formatDeviceFlags(&flags)
+	fmt.Println(enable, disable)
+
+	if expectedEnable != enable {
+		t.Error("expected ", expectedEnable, " got ", enable)
+	}
+
+	if expectedDisable != disable {
+		t.Error("expected ", expectedDisable, " got ", disable)
+	}
+
+}
