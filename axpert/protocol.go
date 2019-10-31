@@ -177,7 +177,7 @@ const (
 	Phase3
 )
 
-//go:generate enumer -type=ParallelPVOK -json
+//go:generate enumer -type=ParallelPVOK -json -text
 type ParallelPVOK uint8
 
 const (
@@ -185,7 +185,7 @@ const (
 	AllInvertersConnected
 )
 
-//go:generate enumer -type=PVPowerBalance -json
+//go:generate enumer -type=PVPowerBalance -json -text
 type PVPowerBalance uint8
 
 const (
@@ -231,28 +231,67 @@ func DeviceRatingInfo(c Connector) (ratingInfo *RatingInfo, err error) {
 	return
 }
 
-//go:generate enumer -type=FlagStatus -json
-type FlagStatus uint8
+//go:generate enumer -type=FlagStatus -json -text
+type FlagStatus byte
 
 const (
 	FlagDisabled FlagStatus = iota
 	FlagEnabled
 )
 
-type DeviceFlags struct {
-	Buzzer                      FlagStatus
-	OverloadBypass              FlagStatus
-	PowerSaving                 FlagStatus
-	DisplayTimeout              FlagStatus
-	OverloadRestart             FlagStatus
-	OverTemperatureRestart      FlagStatus
-	BacklightOn                 FlagStatus
-	PrimarySourceInterruptAlarm FlagStatus
-	FaultCodeRecord             FlagStatus
-	DataLogPopUp                FlagStatus
+func (s FlagStatus) char() byte {
+	switch s {
+	case FlagDisabled:
+		return 'D'
+	case FlagEnabled:
+		return 'E'
+	}
+	return 0
 }
 
-func DeviceFlagStatus(c Connector) (flags *DeviceFlags, err error) {
+//go:generate enumer -type=DeviceFlag -json -text
+type DeviceFlag byte
+
+const (
+	Buzzer DeviceFlag = iota
+	OverloadBypass
+	PowerSaving
+	DisplayTimeout
+	OverloadRestart
+	OverTemperatureRestart
+	BacklightOn
+	PrimarySourceInterruptAlarm
+	FaultCodeRecord
+	DataLogPopUp
+)
+
+func (f DeviceFlag) char() byte {
+	switch f {
+	case Buzzer:
+		return 'A'
+	case OverloadBypass:
+		return 'B'
+	case PowerSaving:
+		return 'J'
+	case DisplayTimeout:
+		return 'K'
+	case OverloadRestart:
+		return 'U'
+	case OverTemperatureRestart:
+		return 'V'
+	case BacklightOn:
+		return 'X'
+	case PrimarySourceInterruptAlarm:
+		return 'Y'
+	case FaultCodeRecord:
+		return 'Z'
+	case DataLogPopUp:
+		return 'L'
+	}
+	return 0
+}
+
+func DeviceFlagStatus(c Connector) (flags map[DeviceFlag]FlagStatus, err error) {
 	resp, err := sendRequest(c, "QFLAG")
 	if err != nil {
 		return
@@ -392,55 +431,48 @@ func WarningStatus(c Connector) (warnings []DeviceWarning, err error) {
 	return
 }
 
-func SetDeviceFlags(c Connector, flags *DeviceFlags) error {
-	enableCommand, disableCommand := formatDeviceFlags(flags)
-	resp, err := sendRequest(c, enableCommand)
+func EnableDeviceFlags(c Connector, flags []DeviceFlag) error {
+	command := formatDeviceFlags(flags, FlagEnabled)
+	resp, err := sendRequest(c, command)
 	if err != nil {
 		return err
 	}
 	if resp == "NAK" {
-		return fmt.Errorf("command not acknowledged, %v", enableCommand)
+		return fmt.Errorf("command not acknowledged, %v", command)
 	}
-
-	resp, err = sendRequest(c, disableCommand)
-	if err != nil {
-		return err
-	}
-	if resp == "NAK" {
-		return fmt.Errorf("command not acknowledged, %v", disableCommand)
-	}
-
 	return nil
 }
 
-func formatDeviceFlags(flags *DeviceFlags) (enableCommand string, disableCommand string) {
-	enabled := new(strings.Builder)
-	enabled.WriteString("PE")
-	disabled := new(strings.Builder)
-	disabled.WriteString("PD")
-
-	appendFlag(flags.Buzzer, 'A', enabled, disabled)
-	appendFlag(flags.OverloadBypass, 'B', enabled, disabled)
-	appendFlag(flags.PowerSaving, 'J', enabled, disabled)
-	appendFlag(flags.DisplayTimeout, 'K', enabled, disabled)
-	appendFlag(flags.OverloadRestart, 'U', enabled, disabled)
-	appendFlag(flags.OverTemperatureRestart, 'V', enabled, disabled)
-	appendFlag(flags.BacklightOn, 'X', enabled, disabled)
-	appendFlag(flags.PrimarySourceInterruptAlarm, 'Y', enabled, disabled)
-	appendFlag(flags.FaultCodeRecord, 'Z', enabled, disabled)
-	appendFlag(flags.DataLogPopUp, 'L', enabled, disabled)
-
-	enableCommand = enabled.String()
-	disableCommand = disabled.String()
-	return
+func DisableDeviceFlags(c Connector, flags []DeviceFlag) error {
+	command := formatDeviceFlags(flags, FlagDisabled)
+	return sendCommand(c, command)
 }
 
-func appendFlag(status FlagStatus, flagChar byte, enabled *strings.Builder, disabled *strings.Builder) {
-	if status == FlagEnabled {
-		enabled.WriteByte(flagChar)
-	} else {
-		disabled.WriteByte(flagChar)
+func formatDeviceFlags(flags []DeviceFlag, status FlagStatus) string {
+	cmdBuilder := new(strings.Builder)
+	cmdBuilder.WriteByte('P')
+	cmdBuilder.WriteByte(status.char())
+	for _, flag := range flags {
+		cmdBuilder.WriteByte(flag.char())
 	}
+
+	return cmdBuilder.String()
+}
+
+func SetOutputSourcePriority(c Connector, priority OutputSourcePriority) error {
+	command := fmt.Sprintf("POP%02d", priority)
+	return sendCommand(c, command)
+}
+
+func sendCommand(c Connector, command string) error {
+	resp, err := sendRequest(c, command)
+	if err != nil {
+		return err
+	}
+	if resp == "NAK" {
+		return fmt.Errorf("command not acknowledged, %v", command)
+	}
+	return nil
 }
 
 func sendRequest(c Connector, req string) (resp string, err error) {
@@ -674,8 +706,8 @@ func parseRatingInfo(resp string) (*RatingInfo, error) {
 	return &info, nil
 }
 
-func parseDeviceFlags(resp string) (*DeviceFlags, error) {
-	flags := DeviceFlags{}
+func parseDeviceFlags(resp string) (map[DeviceFlag]FlagStatus, error) {
+	flags := make(map[DeviceFlag]FlagStatus)
 
 	if len(resp) < 2 {
 		return nil, fmt.Errorf("response too short: %s", resp)
@@ -685,25 +717,25 @@ func parseDeviceFlags(resp string) (*DeviceFlags, error) {
 		for i := 1; i < len(resp); i++ {
 			switch resp[i] {
 			case 'A', 'a':
-				flags.Buzzer = value
+				flags[Buzzer] = value
 			case 'B', 'b':
-				flags.OverloadBypass = value
+				flags[OverloadBypass] = value
 			case 'J', 'j':
-				flags.PowerSaving = value
+				flags[PowerSaving] = value
 			case 'K', 'k':
-				flags.DisplayTimeout = value
+				flags[DisplayTimeout] = value
 			case 'L', 'l':
-				flags.DataLogPopUp = value
+				flags[DataLogPopUp] = value
 			case 'U', 'u':
-				flags.OverloadRestart = value
+				flags[OverloadRestart] = value
 			case 'V', 'v':
-				flags.OverTemperatureRestart = value
+				flags[OverTemperatureRestart] = value
 			case 'X', 'x':
-				flags.BacklightOn = value
+				flags[BacklightOn] = value
 			case 'Y', 'y':
-				flags.PrimarySourceInterruptAlarm = value
+				flags[PrimarySourceInterruptAlarm] = value
 			case 'Z', 'z':
-				flags.FaultCodeRecord = value
+				flags[FaultCodeRecord] = value
 			case 'D':
 				value = FlagDisabled
 			default:
@@ -711,7 +743,7 @@ func parseDeviceFlags(resp string) (*DeviceFlags, error) {
 			}
 		}
 	}
-	return &flags, nil
+	return flags, nil
 }
 
 func parseDeviceStatusParams(resp string) (*DeviceStatusParams, error) {

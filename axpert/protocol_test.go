@@ -1,7 +1,9 @@
 package axpert
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -57,7 +59,7 @@ func TestParseRatingInfo(t *testing.T) {
 func TestParseDeviceFlags(t *testing.T) {
 	resp := "EABJKLDUVXYZ"
 
-	expectedFlags := DeviceFlags{
+	expectedFlags := map[DeviceFlag]FlagStatus{
 		Buzzer:                      FlagEnabled,
 		OverloadBypass:              FlagEnabled,
 		PowerSaving:                 FlagEnabled,
@@ -71,7 +73,8 @@ func TestParseDeviceFlags(t *testing.T) {
 	}
 
 	flags, err := parseDeviceFlags(resp)
-	fmt.Println(flags)
+	bytes, err := json.Marshal(flags)
+	fmt.Println(string(bytes))
 
 	if err != nil {
 		t.Error("expected no error, got", err)
@@ -79,8 +82,8 @@ func TestParseDeviceFlags(t *testing.T) {
 	if flags == nil {
 		t.Error("expected result, got nil")
 	}
-	if expectedFlags != *flags {
-		t.Error("expected ", expectedFlags, " got ", *flags)
+	if !reflect.DeepEqual(expectedFlags, flags) {
+		t.Error("expected ", expectedFlags, " got ", flags)
 	}
 
 }
@@ -88,7 +91,7 @@ func TestParseDeviceFlags(t *testing.T) {
 func TestParseDeviceFlagsWithLowercaseResponse(t *testing.T) {
 	resp := "EabjklDuvxyz"
 
-	expectedFlags := DeviceFlags{
+	expectedFlags := map[DeviceFlag]FlagStatus{
 		Buzzer:                      FlagEnabled,
 		OverloadBypass:              FlagEnabled,
 		PowerSaving:                 FlagEnabled,
@@ -102,7 +105,8 @@ func TestParseDeviceFlagsWithLowercaseResponse(t *testing.T) {
 	}
 
 	flags, err := parseDeviceFlags(resp)
-	fmt.Println(flags)
+	bytes, err := json.Marshal(flags)
+	fmt.Println(string(bytes))
 
 	if err != nil {
 		t.Error("expected no error, got", err)
@@ -110,8 +114,8 @@ func TestParseDeviceFlagsWithLowercaseResponse(t *testing.T) {
 	if flags == nil {
 		t.Error("expected result, got nil")
 	}
-	if expectedFlags != *flags {
-		t.Error("expected ", expectedFlags, " got ", *flags)
+	if !reflect.DeepEqual(expectedFlags, flags) {
+		t.Error("expected ", expectedFlags, " got ", flags)
 	}
 
 }
@@ -348,29 +352,38 @@ func Equal(a, b []DeviceWarning) bool {
 	return true
 }
 
-func TestFormatDeviceFlags(t *testing.T) {
-	flags := DeviceFlags{
-		Buzzer:                      FlagEnabled,
-		OverloadBypass:              FlagEnabled,
-		PowerSaving:                 FlagEnabled,
-		DisplayTimeout:              FlagEnabled,
-		OverloadRestart:             FlagDisabled,
-		OverTemperatureRestart:      FlagDisabled,
-		BacklightOn:                 FlagDisabled,
-		PrimarySourceInterruptAlarm: FlagDisabled,
-		FaultCodeRecord:             FlagDisabled,
-		DataLogPopUp:                FlagEnabled,
+func TestFormatEnabledFlags(t *testing.T) {
+	flags := []DeviceFlag{
+		Buzzer,
+		OverloadBypass,
+		PowerSaving,
+		DisplayTimeout,
+		DataLogPopUp,
 	}
 
 	expectedEnable := "PEABJKL"
-	expectedDisable := "PDUVXYZ"
 
-	enable, disable := formatDeviceFlags(&flags)
-	fmt.Println(enable, disable)
+	enable := formatDeviceFlags(flags, FlagEnabled)
+	fmt.Println(enable)
 
 	if expectedEnable != enable {
 		t.Error("expected ", expectedEnable, " got ", enable)
 	}
+}
+
+func TestFormatDisabledFlags(t *testing.T) {
+	flags := []DeviceFlag{
+		OverloadRestart,
+		OverTemperatureRestart,
+		BacklightOn,
+		PrimarySourceInterruptAlarm,
+		FaultCodeRecord,
+	}
+
+	expectedDisable := "PDUVXYZ"
+
+	disable := formatDeviceFlags(flags, FlagDisabled)
+	fmt.Println(disable)
 
 	if expectedDisable != disable {
 		t.Error("expected ", expectedDisable, " got ", disable)
