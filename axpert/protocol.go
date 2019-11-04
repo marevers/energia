@@ -71,38 +71,66 @@ func SCC3FirmwareVersion(c Connector) (version *FirmwareVersion, err error) {
 	return
 }
 
-func CVModeChargingTime(c Connector) (chargingTime string, err error) {
-	chargingTime, err = sendRequest(c, "QCVT")
+func CVModeChargingTime(c Connector) (chargingTime uint8, err error) {
+	time, err := sendRequest(c, "QCVT")
+	if err != nil {
+		return
+	}
+	b, err := strconv.ParseUint(time, 10, 8)
+	if err != nil {
+		return
+	}
+	chargingTime = uint8(b)
 	return
 }
 
-func ChargingStage(c Connector) (chargingStage string, err error) {
-	chargingStage, err = sendRequest(c, "QCST")
+func DeviceChargingStage(c Connector) (chargingStage ChargingStage, err error) {
+	stage, err := sendRequest(c, "QCST")
+	if err != nil {
+		return
+	}
+	b, err := strconv.ParseUint(stage, 10, 8)
+	if err != nil {
+		return
+	}
+	chargingStage = ChargingStage(b)
 	return
 }
 
-func DeviceOutputMode(c Connector) (otputMode string, err error) {
-	otputMode, err = sendRequest(c, "QOPM")
+func DeviceOutputMode(c Connector) (outputMode OutputMode, err error) {
+	mode, err := sendRequest(c, "QOPM")
+	if err != nil {
+		return
+	}
+	b, err := strconv.ParseUint(mode, 10, 8)
+	if err != nil {
+		return
+	}
+	outputMode = OutputMode(b)
 	return
 }
 
-func DIPBootstrapped(c Connector) (hasBootstrap string, err error) {
-	hasBootstrap, err = sendRequest(c, "QBOOT")
+func DSPBootstrapped(c Connector) (hasBootstrap bool, err error) {
+	bootstrap, err := sendRequest(c, "QBOOT")
+	if err != nil {
+		return
+	}
+	hasBootstrap = bootstrap != "0"
 	return
 }
 
-func MaxSolarChargingCurrent(c Connector) (charginCurrent string, err error) {
-	charginCurrent, err = sendRequest(c, "QMSCHGCR")
+func MaxSolarChargingCurrent(c Connector) (chargingCurrent string, err error) {
+	chargingCurrent, err = sendRequest(c, "QMSCHGCR")
 	return
 }
 
-func MaxUtilityChargingCurrent(c Connector) (charginCurrent string, err error) {
-	charginCurrent, err = sendRequest(c, "QMUCHGCR")
+func MaxUtilityChargingCurrent(c Connector) (chargingCurrent string, err error) {
+	chargingCurrent, err = sendRequest(c, "QMUCHGCR")
 	return
 }
 
-func MaxTotalChargingCurrent(c Connector) (charginCurrent string, err error) {
-	charginCurrent, err = sendRequest(c, "QMCHGCR")
+func MaxTotalChargingCurrent(c Connector) (chargingCurrent string, err error) {
+	chargingCurrent, err = sendRequest(c, "QMCHGCR")
 	return
 }
 
@@ -175,6 +203,15 @@ const (
 	Phase1
 	Phase2
 	Phase3
+)
+
+//go:generate enumer -type=ChargingStage -json
+type ChargingStage uint8
+
+const (
+	Auto ChargingStage = iota
+	TwoStage
+	ThreeStage
 )
 
 //go:generate enumer -type=ParallelPVOK -json -text
@@ -461,6 +498,107 @@ func formatDeviceFlags(flags []DeviceFlag, status FlagStatus) string {
 
 func SetOutputSourcePriority(c Connector, priority OutputSourcePriority) error {
 	command := fmt.Sprintf("POP%02d", priority)
+	return sendCommand(c, command)
+}
+
+func SetDefaultSettings(c Connector) error {
+	command := "PF"
+	return sendCommand(c, command)
+}
+
+func SetMaxTotalChargingCurrent(c Connector, current uint8, parallelNumber uint8) error {
+	command := fmt.Sprintf("MCHGC%1d%03d", parallelNumber, current)
+	return sendCommand(c, command)
+}
+
+func SetParallelMaxTotalChargingCurrent(c Connector, current uint8) error {
+	command := fmt.Sprintf("MNCHGC%03d", current)
+	return sendCommand(c, command)
+
+}
+
+func SetMaxUtilityChargingCurrent(c Connector, current uint8) error {
+	command := fmt.Sprintf("MUCHGC%03d", current)
+	return sendCommand(c, command)
+}
+
+func SetMaxSolarChargingCurrent(c Connector, current uint8) error {
+	command := fmt.Sprintf("MSCHGC%03d", current)
+	return sendCommand(c, command)
+}
+
+func SetOutputRatingFrequency(c Connector, frequency uint8) error {
+	command := fmt.Sprintf("F%02d", frequency)
+	return sendCommand(c, command)
+}
+
+func SetBatteryRechargeVoltage(c Connector, voltage float32) error {
+	command := fmt.Sprintf("PBCV%.1f", voltage)
+	return sendCommand(c, command)
+}
+
+func SetBatteryRedischargeVoltage(c Connector, voltage float32) error {
+	command := fmt.Sprintf("PBDV%.1f", voltage)
+	return sendCommand(c, command)
+}
+
+func SetChargerSourcePriority(c Connector, priority ChargerSourcePriority) error {
+	command := fmt.Sprintf("PCP%02d", priority)
+	return sendCommand(c, command)
+}
+
+func SetGridWorkingRange(c Connector, voltageRange VoltageRange) error {
+	command := fmt.Sprintf("PGR%02d", voltageRange)
+	return sendCommand(c, command)
+}
+
+func SetBatteryType(c Connector, batteryType BatteryType) error {
+	command := fmt.Sprintf("PBT%02d", batteryType)
+	return sendCommand(c, command)
+}
+
+func SetDeviceOutputMode(c Connector, mode OutputMode) error {
+	command := fmt.Sprintf("POPM%02d", mode)
+	return sendCommand(c, command)
+}
+
+func SetParallelChargerSourcePriority(c Connector, priority ChargerSourcePriority, parallelNumber uint8) error {
+	command := fmt.Sprintf("PPCP%1d%02d", parallelNumber, priority)
+	return sendCommand(c, command)
+}
+
+func SetBatteryCutoffVoltage(c Connector, voltage float32) error {
+	command := fmt.Sprintf("PSDV%.1f", voltage)
+	return sendCommand(c, command)
+}
+
+func SetCVModeChargingVoltage(c Connector, voltage float32) error {
+	command := fmt.Sprintf("PCVV%.1f", voltage)
+	return sendCommand(c, command)
+}
+
+func SetFloatChargingVoltage(c Connector, voltage float32) error {
+	command := fmt.Sprintf("PBFT%.1f", voltage)
+	return sendCommand(c, command)
+}
+
+func SetDeviceChargingStage(c Connector, mode OutputMode) error {
+	command := fmt.Sprintf("PCST%02d", mode)
+	return sendCommand(c, command)
+}
+
+func SetCVModeChargingTime(c Connector, chargingTime uint8) error {
+	command := fmt.Sprintf("PCVT%03d", chargingTime)
+	return sendCommand(c, command)
+}
+
+func SetParallelPVOK(c Connector, pvok ParallelPVOK) error {
+	command := fmt.Sprintf("PPVOKC%1d", pvok)
+	return sendCommand(c, command)
+}
+
+func SetPVPowerBalance(c Connector, balance PVPowerBalance) error {
+	command := fmt.Sprintf("PSPB%1d", balance)
 	return sendCommand(c, command)
 }
 

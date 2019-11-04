@@ -60,7 +60,7 @@ func main() {
 	}
 	fmt.Println("CV Mode Charging Time: ", chargingTime)
 
-	chargingStage, err := axpert.ChargingStage(conn)
+	chargingStage, err := axpert.DeviceChargingStage(conn)
 	if err != nil {
 		panic(err)
 	}
@@ -72,11 +72,11 @@ func main() {
 	}
 	fmt.Println("Output Mode: ", outputMode)
 
-	bootstrapped, err := axpert.DIPBootstrapped(conn)
+	bootstrapped, err := axpert.DSPBootstrapped(conn)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("DIPBootstrapped: ", bootstrapped)
+	fmt.Println("DSPBootstrapped: ", bootstrapped)
 	/*##
 	maxSolarChargingCurrent, err := axpert.MaxSolarChargingCurrent(conn)
 	if err != nil {
