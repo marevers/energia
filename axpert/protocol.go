@@ -389,7 +389,7 @@ const (
 	WarnLineFail
 	WarnOPVShort
 	WarnInverterVoltageLow
-	WarnInverrterVoltageHigh
+	WarnInverterVoltageHigh
 	WarnOverTemperature
 	WarnFanLocked
 	WarnBatteryVoltageHigh

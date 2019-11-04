@@ -151,7 +151,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Warning status ", warnings)
+	jsonWarnings, err := json.Marshal(warnings)
+	fmt.Println("Warning status ", string(jsonWarnings))
 
 	fmt.Println("Closing connection")
 	conn.Close()

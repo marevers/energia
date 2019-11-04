@@ -13,7 +13,8 @@ func TestParseFirmwareVersion(t *testing.T) {
 	expectedFv := FirmwareVersion{"00072", "70"}
 
 	fv, err := parseFirmwareVersion(resp, "VERFW")
-	fmt.Println(fv)
+	bytes, err := json.MarshalIndent(fv, "", "  ")
+	fmt.Println(string(bytes))
 
 	if err != nil {
 		t.Error("expected no error, got", err)
@@ -42,7 +43,8 @@ func TestParseRatingInfo(t *testing.T) {
 		ParallelPVOK: AnyInverterConnected, PVPowerBalance: InputPowerIsChargedPowerPlusLoadPower}
 
 	info, err := parseRatingInfo(resp)
-	fmt.Println(info)
+	bytes, err := json.MarshalIndent(info, "", "  ")
+	fmt.Println(string(bytes))
 
 	if err != nil {
 		t.Error("expected no error, got", err)
@@ -73,7 +75,7 @@ func TestParseDeviceFlags(t *testing.T) {
 	}
 
 	flags, err := parseDeviceFlags(resp)
-	bytes, err := json.Marshal(flags)
+	bytes, err := json.MarshalIndent(flags, "", "  ")
 	fmt.Println(string(bytes))
 
 	if err != nil {
@@ -105,7 +107,7 @@ func TestParseDeviceFlagsWithLowercaseResponse(t *testing.T) {
 	}
 
 	flags, err := parseDeviceFlags(resp)
-	bytes, err := json.Marshal(flags)
+	bytes, err := json.MarshalIndent(flags, "", "  ")
 	fmt.Println(string(bytes))
 
 	if err != nil {
@@ -156,7 +158,8 @@ func TestParseDeviceStatusParams(t *testing.T) {
 	}
 
 	params, err := parseDeviceStatusParams(resp)
-	fmt.Println(params)
+	bytes, err := json.MarshalIndent(params, "", "  ")
+	fmt.Println(string(bytes))
 
 	if err != nil {
 		t.Error("expected no error, got", err)
@@ -218,7 +221,8 @@ func TestParseDeviceStatusParams2(t *testing.T) {
 	}
 
 	params, err := parseDeviceStatusParams2(resp, &DeviceStatusParams{})
-	fmt.Println(params)
+	bytes, err := json.MarshalIndent(params, "", "  ")
+	fmt.Println(string(bytes))
 
 	if err != nil {
 		t.Error("expected no error, got", err)
@@ -281,7 +285,8 @@ func TestParseAllStatusParams(t *testing.T) {
 	}
 
 	params, err := parseDeviceStatusParams(resp1)
-	fmt.Println(params)
+	bytes, err := json.MarshalIndent(params, "", "  ")
+	fmt.Println(string(bytes))
 
 	if err != nil {
 		t.Error("expected no error, got", err)
@@ -291,7 +296,8 @@ func TestParseAllStatusParams(t *testing.T) {
 	}
 
 	params, err = parseDeviceStatusParams2(resp2, params)
-	fmt.Println(params)
+	bytes, err = json.MarshalIndent(params, "", "  ")
+	fmt.Println(string(bytes))
 
 	if err != nil {
 		t.Error("expected no error, got", err)
@@ -310,6 +316,9 @@ func TestParseWarningsAllZero(t *testing.T) {
 	expected := make([]DeviceWarning, 0)
 
 	warnings, err := parseWarnings(resp)
+	bytes, err := json.MarshalIndent(warnings, "", "  ")
+	fmt.Println(string(bytes))
+
 	if err != nil {
 		t.Error("expected no error, got", err)
 	}
@@ -328,6 +337,9 @@ func TestParseWarnings(t *testing.T) {
 	expected := []DeviceWarning{WarnBusUnder, WarnBatteryShutdown}
 
 	warnings, err := parseWarnings(resp)
+	bytes, err := json.MarshalIndent(warnings, "", "  ")
+	fmt.Println(string(bytes))
+
 	if err != nil {
 		t.Error("expected no error, got", err)
 	}
