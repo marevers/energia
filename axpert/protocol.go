@@ -489,14 +489,16 @@ func ParallelDeviceInfo(c Connector, inverterIndex int) (info *ParallelInfo, err
 		return
 	}
 
-	resp, err = sendRequest(c, fmt.Sprintf("QP2GS%d", inverterIndex))
-	if err != nil {
-		return
-	}
-	info, err = parseParallelPVInfo(resp, info)
-	if err != nil {
-		return
-	}
+	// This always fails/blocks indefinitely/times out
+	//resp, err = sendRequest(c, fmt.Sprintf("QP2GS%d", inverterIndex))
+	//if err != nil {
+	//	return
+	//}
+	//info, err = parseParallelPVInfo(resp, info)
+	//if err != nil {
+	//	return
+	//}
+
 	return
 }
 
