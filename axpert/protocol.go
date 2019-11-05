@@ -424,6 +424,7 @@ func DeviceGeneralStatus2(c Connector, p *DeviceStatusParams) (params *DeviceSta
 	return
 }
 
+//go:generate enumer -type=BatteryStatus -json -text
 type BatteryStatus uint8
 
 const (
