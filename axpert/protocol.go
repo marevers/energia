@@ -72,11 +72,16 @@ func SCC3FirmwareVersion(c Connector) (version *FirmwareVersion, err error) {
 }
 
 func CVModeChargingTime(c Connector) (chargingTime uint8, err error) {
-	time, err := sendRequest(c, "QCVT")
+	const query = "QCVT"
+	resp, err := sendRequest(c, query)
 	if err != nil {
 		return
 	}
-	b, err := strconv.ParseUint(time, 10, 8)
+	if resp == "NAK" {
+		err = fmt.Errorf("query not supported, %v", query)
+		return
+	}
+	b, err := strconv.ParseUint(resp, 10, 8)
 	if err != nil {
 		return
 	}
@@ -85,11 +90,16 @@ func CVModeChargingTime(c Connector) (chargingTime uint8, err error) {
 }
 
 func DeviceChargingStage(c Connector) (chargingStage ChargingStage, err error) {
-	stage, err := sendRequest(c, "QCST")
+	const query = "QCST"
+	resp, err := sendRequest(c, query)
 	if err != nil {
 		return
 	}
-	b, err := strconv.ParseUint(stage, 10, 8)
+	if resp == "NAK" {
+		err = fmt.Errorf("query not supported, %v", query)
+		return
+	}
+	b, err := strconv.ParseUint(resp, 10, 8)
 	if err != nil {
 		return
 	}
@@ -98,11 +108,16 @@ func DeviceChargingStage(c Connector) (chargingStage ChargingStage, err error) {
 }
 
 func DeviceOutputMode(c Connector) (outputMode OutputMode, err error) {
-	mode, err := sendRequest(c, "QOPM")
+	query := "QOPM"
+	resp, err := sendRequest(c, query)
 	if err != nil {
 		return
 	}
-	b, err := strconv.ParseUint(mode, 10, 8)
+	if resp == "NAK" {
+		err = fmt.Errorf("query not supported, %v", query)
+		return
+	}
+	b, err := strconv.ParseUint(resp, 10, 8)
 	if err != nil {
 		return
 	}
