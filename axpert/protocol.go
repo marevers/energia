@@ -720,6 +720,7 @@ func sendCommand(c Connector, command string) error {
 }
 
 func sendRequest(c Connector, req string) (resp string, err error) {
+	log.Println("Sending request", req)
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)
 	reqBytes = append(reqBytes, cr)
@@ -741,6 +742,7 @@ func sendRequest(c Connector, req string) (resp string, err error) {
 	}
 
 	resp = string(readBytes[1 : len(readBytes)-3])
+	log.Println("Received response: ", resp)
 	return
 }
 
