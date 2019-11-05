@@ -123,15 +123,35 @@ func main() {
 	}
 	fmt.Println("Device status flags ", string(jsonFlags))
 
-	params, err := axpert.DeviceGeneralStatus(conn)
+	deviceInfo, err := axpert.ParallelDeviceInfo(conn, 1)
 	if err != nil {
 		fmt.Println(err)
 	}
-	jsonParams, err := json.Marshal(params)
+	jsonInfo, err := json.MarshalIndent(deviceInfo, "", "  ")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Device status params ", string(jsonParams))
+	fmt.Println("Parallel Device 1 Info ", string(jsonInfo))
+
+	device2Info, err := axpert.ParallelDeviceInfo(conn, 2)
+	if err != nil {
+		fmt.Println(err)
+	}
+	json2Info, err := json.MarshalIndent(device2Info, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Parallel Device 2 Info ", string(json2Info))
+
+	//params, err := axpert.DeviceGeneralStatus(conn)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//jsonParams, err := json.Marshal(params)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//fmt.Println("Device status params ", string(jsonParams))
 
 	// Remove due to timeout error
 	//params, err = axpert.DeviceGeneralStatus2(conn, params)

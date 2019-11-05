@@ -424,6 +424,82 @@ func DeviceGeneralStatus2(c Connector, p *DeviceStatusParams) (params *DeviceSta
 	return
 }
 
+type BatteryStatus uint8
+
+const (
+	BatteryNormal BatteryStatus = iota
+	BatteryUnder
+	BatteryOpen
+)
+
+type ParallelInfo struct {
+	DeviceExists               bool
+	SerialNumber               string
+	DeviceMode                 string
+	FaultCode                  uint8
+	GridVoltage                float32
+	GridFrequency              float32
+	ACOutputVoltage            float32
+	ACOutputFrequency          float32
+	ACOutputApparentPower      int
+	ACOutputActivePower        int
+	OutputLoadPercent          int
+	BatteryVoltage             float32
+	BatteryChargingCurrent     int
+	BatteryCapacity            int
+	TotalChargingCurrent       int
+	TotalACOutputApparentPower int
+	TotalOutputActivePower     int
+	TotalACOutputPercent       int
+	ACCharging                 bool
+	LineLoss                   bool
+	LoadOn                     bool
+	ConfigurationChanged       bool
+	BatteryStatus              BatteryStatus
+	OutputMode                 OutputMode
+	ChargerSourcePriority      ChargerSourcePriority
+	MaxChargerCurrent          int
+	MaxChargerRange            int
+	MaxACChargerCurrent        int
+	BatteryDischargeCurrent    int
+	PV1InputCurrent            int
+	PV1InputVoltage            float32
+	PV1ChargingPower           int
+	PV2InputCurrent            int
+	PV2InputVoltage            float32
+	PV2ChargingPower           int
+	PV3InputCurrent            int
+	PV3InputVoltage            float32
+	PV3ChargingPower           int
+	SCC1OK                     bool
+	SCC1Charging               bool
+	SCC2OK                     bool
+	SCC2Charging               bool
+	SCC3OK                     bool
+	SCC3Charging               bool
+}
+
+func ParallelDeviceInfo(c Connector, inverterIndex int) (info *ParallelInfo, err error) {
+	resp, err := sendRequest(c, fmt.Sprintf("QPGS%d", inverterIndex))
+	if err != nil {
+		return
+	}
+	info, err = parseParallelInfo(resp)
+	if err != nil {
+		return
+	}
+
+	resp, err = sendRequest(c, fmt.Sprintf("QP2GS%d", inverterIndex))
+	if err != nil {
+		return
+	}
+	info, err = parseParallelPVInfo(resp, info)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func DeviceMode(c Connector) (mode string, err error) {
 	mode, err = sendRequest(c, "QMOD")
 	return
@@ -1145,4 +1221,198 @@ func parseWarnings(status string) ([]DeviceWarning, error) {
 	}
 
 	return warnings, nil
+}
+
+func parseParallelInfo(resp string) (*ParallelInfo, error) {
+	parts := strings.Split(resp, " ")
+	if len(parts) < 27 {
+		return nil, fmt.Errorf("response too short: %s", resp)
+	}
+
+	info := ParallelInfo{}
+
+	b, err := strconv.ParseUint(parts[0], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.DeviceExists = b == 1
+
+	info.SerialNumber = parts[1]
+
+	info.DeviceMode = parts[2]
+
+	b, err = strconv.ParseUint(parts[3], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.FaultCode = uint8(b)
+
+	f, err := strconv.ParseFloat(parts[4], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.GridVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[5], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.GridFrequency = float32(f)
+
+	f, err = strconv.ParseFloat(parts[6], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputVoltage = float32(f)
+
+	f, err = strconv.ParseFloat(parts[7], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputFrequency = float32(f)
+
+	i, err := strconv.Atoi(parts[8])
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputApparentPower = i
+
+	i, err = strconv.Atoi(parts[9])
+	if err != nil {
+		return nil, err
+	}
+	info.ACOutputActivePower = i
+
+	i, err = strconv.Atoi(parts[10])
+	if err != nil {
+		return nil, err
+	}
+	info.OutputLoadPercent = i
+
+	f, err = strconv.ParseFloat(parts[11], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryVoltage = float32(f)
+
+	i, err = strconv.Atoi(parts[12])
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryChargingCurrent = i
+
+	i, err = strconv.Atoi(parts[13])
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryCapacity = i
+
+	f, err = strconv.ParseFloat(parts[14], 32)
+	if err != nil {
+		return nil, err
+	}
+	info.PV1InputVoltage = float32(f)
+
+	i, err = strconv.Atoi(parts[15])
+	if err != nil {
+		return nil, err
+	}
+	info.TotalChargingCurrent = i
+
+	i, err = strconv.Atoi(parts[16])
+	if err != nil {
+		return nil, err
+	}
+	info.TotalACOutputApparentPower = i
+
+	i, err = strconv.Atoi(parts[17])
+	if err != nil {
+		return nil, err
+	}
+	info.TotalOutputActivePower = i
+
+	i, err = strconv.Atoi(parts[18])
+	if err != nil {
+		return nil, err
+	}
+	info.TotalACOutputPercent = i
+
+	b, err = strconv.ParseUint(parts[19], 2, 8)
+	if err != nil {
+		return nil, err
+	}
+
+	sflags := uint8(b)
+	info.SCC1OK = sflags&0x80 == 0x80
+	info.ACCharging = sflags&0x40 == 0x40
+	info.SCC1Charging = sflags&0x20 == 0x20
+
+	info.LineLoss = sflags&0x04 == 0x04
+	info.LoadOn = sflags&0x02 == 0x02
+	info.ConfigurationChanged = sflags&0x01 == 0x01
+
+	bs := sflags >> 3 & 0xFC
+	info.BatteryStatus = BatteryStatus(bs)
+
+	b, err = strconv.ParseUint(parts[20], 2, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.OutputMode = OutputMode(b)
+
+	b, err = strconv.ParseUint(parts[21], 2, 8)
+	if err != nil {
+		return nil, err
+	}
+	info.ChargerSourcePriority = ChargerSourcePriority(b)
+
+	i, err = strconv.Atoi(parts[22])
+	if err != nil {
+		return nil, err
+	}
+	info.MaxChargerCurrent = i
+
+	i, err = strconv.Atoi(parts[23])
+	if err != nil {
+		return nil, err
+	}
+	info.MaxChargerRange = i
+
+	i, err = strconv.Atoi(parts[24])
+	if err != nil {
+		return nil, err
+	}
+	info.MaxACChargerCurrent = i
+
+	i, err = strconv.Atoi(parts[25])
+	if err != nil {
+		return nil, err
+	}
+	info.PV1InputCurrent = i
+
+	i, err = strconv.Atoi(parts[26])
+	if err != nil {
+		return nil, err
+	}
+	info.BatteryDischargeCurrent = i
+
+	return &info, nil
+
+}
+
+func parseParallelPVInfo(resp string, info *ParallelInfo) (*ParallelInfo, error) {
+	parts := strings.Split(resp, " ")
+	if len(parts) < 9 {
+		return info, fmt.Errorf("response too short: %s", resp)
+	}
+
+	i, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return info, err
+	}
+	info.PV1ChargingPower = i
+
+	// TODO: Someday, maybe, parse PV2 & PV3 values
+
+	return info, nil
 }
