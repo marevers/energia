@@ -1370,7 +1370,7 @@ func parseParallelInfo(resp string) (*ParallelInfo, error) {
 	info.LoadOn = sflags&0x02 == 0x02
 	info.ConfigurationChanged = sflags&0x01 == 0x01
 
-	bs := sflags >> 3 & 0xFC
+	bs := sflags >> 3 & 0x03
 	info.BatteryStatus = BatteryStatus(bs)
 
 	b, err = strconv.ParseUint(parts[20], 10, 8)
