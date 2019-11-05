@@ -623,11 +623,20 @@ func SetOutputRatingFrequency(c Connector, frequency uint8) error {
 	return sendCommand(c, command)
 }
 
+// Valid values are
+// 12V unit: 11V/11.3V/11.5V/11.8V/12V/12.3V/12.5V/12.8V
+// 24V unit: 22V/22.5V/23V/23.5V/24V/24.5V/25V/25.5V
+// 48V unit: 44V/45V/46V/47V/48V/49V/50V/51V
 func SetBatteryRechargeVoltage(c Connector, voltage float32) error {
 	command := fmt.Sprintf("PBCV%.1f", voltage)
 	return sendCommand(c, command)
 }
 
+// Valid values are
+// 12V unit: 00.0V/12V/12.3V/12.5V/12.8V/13V/13.3V/13.5V/13.8V/14V/14.3V/14.5
+// 24V unit: 00.0V/24V/24.5V/25V/25.5V/26V/26.5V/27V/27.5V/28V/28.5V/29V
+// 48V unit: 00.0/V48V/49V/50V/51V/52V/53V/54V/55V/56V/57V/58V
+// 00.0V means battery is full(charging in float mode).
 func SetBatteryRedischargeVoltage(c Connector, voltage float32) error {
 	command := fmt.Sprintf("PBDV%.1f", voltage)
 	return sendCommand(c, command)
@@ -658,16 +667,19 @@ func SetParallelChargerSourcePriority(c Connector, priority ChargerSourcePriorit
 	return sendCommand(c, command)
 }
 
+// Valid range is 40.0V ~ 48.0V for 48V unit
 func SetBatteryCutoffVoltage(c Connector, voltage float32) error {
 	command := fmt.Sprintf("PSDV%.1f", voltage)
 	return sendCommand(c, command)
 }
 
+// Valid range is 48.0V ~ 58.4V for 48V unit
 func SetCVModeChargingVoltage(c Connector, voltage float32) error {
 	command := fmt.Sprintf("PCVV%.1f", voltage)
 	return sendCommand(c, command)
 }
 
+// Valid range is 48.0V ~ 58.4V for 48V unit
 func SetFloatChargingVoltage(c Connector, voltage float32) error {
 	command := fmt.Sprintf("PBFT%.1f", voltage)
 	return sendCommand(c, command)
@@ -678,6 +690,9 @@ func SetDeviceChargingStage(c Connector, mode OutputMode) error {
 	return sendCommand(c, command)
 }
 
+// Valid times are
+// 0, 10, 20, 40, 60, 90, 120, 150, 180, 210, 240, 255, in minutes
+// 255 is a special value that makes the actual time automatically determined
 func SetCVModeChargingTime(c Connector, chargingTime uint8) error {
 	command := fmt.Sprintf("PCVT%03d", chargingTime)
 	return sendCommand(c, command)
@@ -1354,13 +1369,13 @@ func parseParallelInfo(resp string) (*ParallelInfo, error) {
 	bs := sflags >> 3 & 0xFC
 	info.BatteryStatus = BatteryStatus(bs)
 
-	b, err = strconv.ParseUint(parts[20], 2, 8)
+	b, err = strconv.ParseUint(parts[20], 10, 8)
 	if err != nil {
 		return nil, err
 	}
 	info.OutputMode = OutputMode(b)
 
-	b, err = strconv.ParseUint(parts[21], 2, 8)
+	b, err = strconv.ParseUint(parts[21], 10, 8)
 	if err != nil {
 		return nil, err
 	}
