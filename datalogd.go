@@ -15,11 +15,13 @@ import (
 
 // TODO: These should be configurable
 const path = "/dev/hidraw0"
-const interval = 30 * time.Second
+const interval = 10 * time.Second
 
-const mqttServer = "192.168.24.39"
+const mqttServer = "mosquitto"
 const mqttPort = "1883"
 const mqttTopic = "axpert/data"
+const clientId = "inverter-datalogger"
+const inverterCount = 1
 
 type messageData struct {
 	Timestamp   time.Time
@@ -45,7 +47,7 @@ func main() {
 	clientOpts.SetAutoReconnect(true)
 	clientOpts.SetStore(mqtt.NewFileStore("/tmp/mqtt"))
 	clientOpts.SetCleanSession(false)
-	clientOpts.SetClientID("Axpert")
+	clientOpts.SetClientID(clientId)
 
 	client := mqtt.NewClient(clientOpts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -133,7 +135,7 @@ func sendMessage(data messageData, client mqtt.Client) error {
 	if err != nil {
 		return err
 	}
-	token := client.Publish(mqttTopic, 1, false, msg)
+	token := client.Publish(mqttTopic, 1, true, msg)
 	token.Wait()
 	return nil
 }
