@@ -434,6 +434,7 @@ const (
 )
 
 type ParallelInfo struct {
+	DeviceIndex                int
 	DeviceExists               bool
 	SerialNumber               string
 	DeviceMode                 string
@@ -500,6 +501,7 @@ func ParallelDeviceInfo(c Connector, inverterIndex int) (info *ParallelInfo, err
 	//	return
 	//}
 
+	info.DeviceIndex = inverterIndex
 	return
 }
 
