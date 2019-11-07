@@ -69,6 +69,18 @@ func main() {
 				panic(err)
 			}
 
+			for inv := 0; inv < inverterCount; inv++ {
+				deviceInfo, err := axpert.ParallelDeviceInfo(uc, inv)
+				if err != nil {
+					panic(err)
+				}
+				msgData = messageData{Timestamp: t, MessageType: "DeviceInfo", Data: deviceInfo}
+				err = sendMessage(msgData, client)
+				if err != nil {
+					panic(err)
+				}
+			}
+
 			status, err := axpert.DeviceGeneralStatus(uc)
 			if err != nil {
 				panic(err)
