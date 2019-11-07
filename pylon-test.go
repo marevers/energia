@@ -37,15 +37,6 @@ func main() {
 		StopBits: stopbits,
 		Parity:   parity,
 		Timeout:  30 * time.Second,
-		// Weirdly, it complains if I enable the rs485 config
-		//		RS485: serial.RS485Config{
-		//			Enabled:            true,
-		//			DelayRtsAfterSend:  10 * time.Millisecond,
-		//			DelayRtsBeforeSend: 10 * time.Millisecond,
-		//			RtsHighAfterSend:   false,
-		//			RtsHighDuringSend:  true,
-		//			RxDuringTx:         false,
-		//		},
 	}
 
 	log.Printf("connecting %+v", config)
