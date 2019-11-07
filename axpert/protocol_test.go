@@ -373,7 +373,7 @@ func TestFormatEnabledFlags(t *testing.T) {
 		DataLogPopUp,
 	}
 
-	expectedEnable := "PEABJKL"
+	expectedEnable := "PEabjkl"
 
 	enable := formatDeviceFlags(flags, FlagEnabled)
 	fmt.Println(enable)
@@ -392,7 +392,7 @@ func TestFormatDisabledFlags(t *testing.T) {
 		FaultCodeRecord,
 	}
 
-	expectedDisable := "PDUVXYZ"
+	expectedDisable := "PDuvxyz"
 
 	disable := formatDeviceFlags(flags, FlagDisabled)
 	fmt.Println(disable)

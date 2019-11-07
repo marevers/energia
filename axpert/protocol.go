@@ -320,25 +320,25 @@ const (
 func (f DeviceFlag) char() byte {
 	switch f {
 	case Buzzer:
-		return 'A'
+		return 'a'
 	case OverloadBypass:
-		return 'B'
+		return 'b'
 	case PowerSaving:
-		return 'J'
+		return 'j'
 	case DisplayTimeout:
-		return 'K'
+		return 'k'
 	case OverloadRestart:
-		return 'U'
+		return 'u'
 	case OverTemperatureRestart:
-		return 'V'
+		return 'v'
 	case BacklightOn:
-		return 'X'
+		return 'x'
 	case PrimarySourceInterruptAlarm:
-		return 'Y'
+		return 'y'
 	case FaultCodeRecord:
-		return 'Z'
+		return 'z'
 	case DataLogPopUp:
-		return 'L'
+		return 'l'
 	}
 	return 0
 }
