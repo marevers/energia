@@ -665,6 +665,11 @@ func SetDeviceOutputMode(c Connector, mode OutputMode) error {
 	return sendCommand(c, command)
 }
 
+func SetDeviceOutputVoltage(c Connector, voltage uint8) error {
+	command := fmt.Sprintf("POPV%03d", voltage)
+	return sendCommand(c, command)
+}
+
 func SetParallelChargerSourcePriority(c Connector, priority ChargerSourcePriority, parallelNumber uint8) error {
 	command := fmt.Sprintf("PPCP%1d%02d", parallelNumber, priority)
 	return sendCommand(c, command)
