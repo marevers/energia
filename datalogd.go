@@ -11,6 +11,7 @@ import (
 	"github.com/eclipse/paho.mqtt.golang"
 
 	"github.com/dbld-org/energia/axpert"
+	"github.com/dbld-org/energia/internal/connector"
 )
 
 // TODO: These should be configurable
@@ -31,7 +32,7 @@ type messageData struct {
 
 func main() {
 
-	uc, err := axpert.NewUSBConnector(path)
+	uc, err := connector.NewUSBConnector(path)
 	if err != nil {
 		panic(err)
 	}
