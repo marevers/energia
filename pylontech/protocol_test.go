@@ -1,6 +1,9 @@
 package pylontech
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func Test_lengthChecksum(t *testing.T) {
 	type args struct {
@@ -31,33 +34,7 @@ func Test_lengthChecksum(t *testing.T) {
 	}
 }
 
-func Test_infoChecksum(t *testing.T) {
-	type args struct {
-		info []byte
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    uint16
-		wantErr bool
-	}{
-		{name: "Doc example", args: args{info: []byte{0x12, 0x03, 0x40, 0x04, 0x56, 0xAB, 0xCE, 0xFE}}, want: 0xFC71, wantErr: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := infoChecksum(tt.args.info)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("infoChecksum() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("infoChecksum() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_infoStrChecksum(t *testing.T) {
+func Test_frameChecksum(t *testing.T) {
 	type args struct {
 		info string
 	}
@@ -74,7 +51,7 @@ func Test_infoStrChecksum(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := infoStrChecksum(tt.args.info)
+			got, err := frameChecksum(tt.args.info)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("infoStrChecksum() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -84,4 +61,19 @@ func Test_infoStrChecksum(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_encodeProtocolVersion(t *testing.T) {
+	want := "~2001464F0000FD99\r"
+	got, err := encodeProtocolVersion()
+	fmt.Println(string(got))
+
+	if err != nil {
+		t.Errorf("ProtocolVersion() error = %v", err)
+		return
+	}
+	if string(got) != want {
+		t.Errorf("ProtocolVersion() got = %v, want %v", got, want)
+	}
+
 }
