@@ -45,7 +45,7 @@ func (sc *SerialConnector) Open() error {
 		}
 		if i := bytes.IndexByte(data, '\r'); i >= 0 {
 			// We have a full message
-			return i + 1, data[0:i], nil
+			return i + 1, data[0 : i+1], nil
 		}
 		// If we're at EOF, we return whatever we have
 		if atEOF {
