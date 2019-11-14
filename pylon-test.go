@@ -51,7 +51,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	log.Println("received:", version)
+	log.Println("Protocol version:", version)
 
 	//port, err := serial.Open(&config)
 	//if err != nil {
