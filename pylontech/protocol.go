@@ -50,6 +50,7 @@ func ProtocolVersion(c connector.Connector) (string, error) {
 }
 
 func parseResponse(response []byte) (*frame, error) {
+	log.Printf("received response: [%s]", string(response))
 	respData, err := validateResponse(response)
 	if err != nil {
 		return nil, err
@@ -62,7 +63,7 @@ func parseResponse(response []byte) (*frame, error) {
 	f.cid2 = Command(hex2Byte(respData[6:8]))
 
 	infoLen := uint16(hex2Byte(respData[8:10])) << 8 & uint16(hex2Byte(respData[10:12]))
-	log.Printf("sent length: %04X", infoLen)
+	log.Printf("received length: %04X", infoLen)
 	var info []byte
 	if len(respData) > 12 {
 		info = respData[12:]
