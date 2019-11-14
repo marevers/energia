@@ -43,6 +43,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+	defer sc.Close()
 
 	version, err := pylontech.ProtocolVersion(sc)
 
@@ -50,7 +51,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	log.Println("received: ", version)
+	log.Println("received:", version)
 
 	//port, err := serial.Open(&config)
 	//if err != nil {

@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	hex "github.com/tmthrgd/go-hex"
+	"github.com/tmthrgd/go-hex"
 
 	"github.com/dbld-org/energia/internal/connector"
 )
