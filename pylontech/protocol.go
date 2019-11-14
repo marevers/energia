@@ -101,7 +101,7 @@ func validateResponse(response []byte) ([]byte, error) {
 		return nil, fmt.Errorf("invalid response start %v", response[0])
 	}
 	if response[rlen-1] != end {
-		return nil, fmt.Errorf("invalid response end %v", response[0])
+		return nil, fmt.Errorf("invalid response end %v", response[rlen-1])
 	}
 	checkStart := rlen - 5
 	respData := response[1:checkStart]
