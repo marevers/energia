@@ -69,11 +69,34 @@ func Test_encodeProtocolVersion(t *testing.T) {
 	fmt.Println(string(got))
 
 	if err != nil {
-		t.Errorf("ProtocolVersion() error = %v", err)
+		t.Errorf("encodeProtocolVersion() error = %v", err)
 		return
 	}
+
 	if string(got) != want {
-		t.Errorf("ProtocolVersion() got = %v, want %v", got, want)
+		t.Errorf("encodeProtocolVersion() got = %v, want %v", got, want)
+	}
+
+}
+
+func Test_parseResponse(t *testing.T) {
+	want := "~200146000000FDB3\r"
+	got, err := parseResponse([]byte(want))
+	fmt.Println(got)
+
+	if err != nil {
+		t.Errorf("parseResponse() error = %v", err)
+		return
+	}
+
+	bytes, err := got.encode()
+	if err != nil {
+		t.Errorf("parseResponse() error = %v", err)
+		return
+	}
+
+	if string(bytes) != want {
+		t.Errorf("parseResponse() got = %v, want %v", string(bytes), want)
 	}
 
 }

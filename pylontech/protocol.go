@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/tmthrgd/go-hex"
@@ -40,7 +41,84 @@ func ProtocolVersion(c connector.Connector) (string, error) {
 		return "", err
 	}
 
-	return string(response), err
+	decoded, err := parseResponse(response)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%02X", decoded.ver), err
+}
+
+func parseResponse(response []byte) (*frame, error) {
+	respData, err := validateResponse(response)
+	if err != nil {
+		return nil, err
+	}
+
+	f := &frame{}
+	f.ver = hex2Byte(respData[0:2])
+	f.adr = hex2Byte(respData[2:4])
+	f.cid1 = hex2Byte(respData[4:6])
+	f.cid2 = Command(hex2Byte(respData[6:8]))
+
+	infoLen := uint16(hex2Byte(respData[8:10])) << 8 & uint16(hex2Byte(respData[10:12]))
+	log.Printf("sent length: %04X", infoLen)
+	var info []byte
+	if len(respData) > 12 {
+		info = respData[12:]
+	}
+
+	lenCheck, err := lengthChecksum(len(info))
+	if err != nil {
+		return nil, err
+	}
+	if lenCheck != infoLen {
+		return nil, fmt.Errorf("invalid length, received %v, calculated %v", infoLen, lenCheck)
+	}
+	f.info = info
+
+	return f, nil
+}
+
+func hex2Byte(bytes []byte) byte {
+	if len(bytes) > 2 {
+		return 0
+	}
+	parsed, err := strconv.ParseUint(string(bytes), 16, 16)
+	if err != nil {
+		return 0
+	}
+
+	return byte(parsed)
+}
+
+func validateResponse(response []byte) ([]byte, error) {
+	rlen := len(response)
+	if rlen == 0 {
+		return nil, fmt.Errorf("response is empty")
+	}
+	if response[0] != start {
+		return nil, fmt.Errorf("invalid response start %v", response[0])
+	}
+	if response[rlen-1] != end {
+		return nil, fmt.Errorf("invalid response end %v", response[0])
+	}
+	checkStart := rlen - 5
+	respData := response[1:checkStart]
+	respCheck := string(response[checkStart : rlen-1])
+	dataSum, err := frameChecksum(string(respData))
+	if err != nil {
+		return nil, err
+	}
+	checkSum, err := strconv.ParseUint(respCheck, 16, 16)
+	if err != nil {
+		return nil, err
+	}
+	if uint16(checkSum) != dataSum {
+		return nil, fmt.Errorf("invalid checksum, received: %v, calculated: %v", checkSum, dataSum)
+	}
+
+	return respData, nil
 }
 
 func sendRequest(c connector.Connector, encoded []byte) ([]byte, error) {
