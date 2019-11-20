@@ -13,29 +13,33 @@ import (
 )
 
 //go:generate enumer -type=Command -json
-type Command uint8
+type command uint8
 
 const (
-	GetAnalogValue          Command = 0x42
-	GetAlarmData                    = 0x44
-	GetSystemParameter              = 0x47
-	GetProtocolVersion              = 0x4F
-	GetManufacturerInfo             = 0x51
-	GetChargeManagementInfo         = 0x92
-	GetSeriesNumber                 = 0x93
-	SetChargeManagementInfo         = 0x94
-	TurnOff                         = 0x95
+	getAnalogValue          command = 0x42
+	getAlarmData                    = 0x44
+	getSystemParameter              = 0x47
+	getProtocolVersion              = 0x4F
+	getManufacturerInfo             = 0x51
+	getChargeManagementInfo         = 0x92
+	getSeriesNumber                 = 0x93
+	setChargeManagementInfo         = 0x94
+	turnOff                         = 0x95
 )
 
 const (
-	Version     = 0x20
-	start       = 0x7E
-	end         = 0x0D
-	batteryData = 0x46
+	defaultVersion = 0x20
+	start          = 0x7E
+	end            = 0x0D
+	batteryData    = 0x46
 )
 
-func ProtocolVersion(c connector.Connector) (string, error) {
+func GetProtocolVersion(c connector.Connector) (string, error) {
 	encoded, err := encodeProtocolVersion()
+	if err != nil {
+		return "", err
+	}
+
 	response, err := sendRequest(c, encoded)
 	if err != nil {
 		return "", err
@@ -49,6 +53,54 @@ func ProtocolVersion(c connector.Connector) (string, error) {
 	return fmt.Sprintf("%02X", decoded.ver), err
 }
 
+type ManufacturerInfo struct {
+	DeviceName       string
+	SoftwareVersion  string
+	ManufacturerName string
+}
+
+func GetManufacturerInfo(c connector.Connector) (*ManufacturerInfo, error) {
+	encoded, err := encodeManufacturerInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := sendRequest(c, encoded)
+	if err != nil {
+		return nil, err
+	}
+
+	decoded, err := parseResponse(response)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseManufacturerInfo(decoded.info)
+}
+
+func parseManufacturerInfo(info []byte) (*ManufacturerInfo, error) {
+	man := &ManufacturerInfo{
+		DeviceName:       string(info[0:10]),
+		SoftwareVersion:  string(hex2Bytes(info[10:14])),
+		ManufacturerName: string(info[14:]),
+	}
+	return man, nil
+}
+
+func encodeManufacturerInfo() ([]byte, error) {
+	f := newFrame(1, getManufacturerInfo, nil)
+
+	encode, err := f.encode()
+	return encode, err
+}
+
+func encodeProtocolVersion() ([]byte, error) {
+	f := newFrame(1, getProtocolVersion, nil)
+
+	encode, err := f.encode()
+	return encode, err
+}
+
 func parseResponse(response []byte) (*frame, error) {
 	log.Printf("received response: [%s]", string(response))
 	respData, err := validateResponse(response)
@@ -60,7 +112,7 @@ func parseResponse(response []byte) (*frame, error) {
 	f.ver = hex2Byte(respData[0:2])
 	f.adr = hex2Byte(respData[2:4])
 	f.cid1 = hex2Byte(respData[4:6])
-	f.cid2 = Command(hex2Byte(respData[6:8]))
+	f.cid2 = command(hex2Byte(respData[6:8]))
 
 	infoLen := uint16(hex2Byte(respData[8:10])) << 8 & uint16(hex2Byte(respData[10:12]))
 	log.Printf("received length: %04X", infoLen)
@@ -81,11 +133,24 @@ func parseResponse(response []byte) (*frame, error) {
 	return f, nil
 }
 
-func hex2Byte(bytes []byte) byte {
-	if len(bytes) > 2 {
+func hex2Bytes(hexBytes []byte) []byte {
+	hexLen := len(hexBytes)
+	if hexLen%2 != 0 {
+		return nil
+	}
+
+	bs := make([]byte, hexLen/2)
+	for i := 0; i < hexLen; i += 2 {
+		bs = append(bs, hex2Byte(hexBytes[i:i+2]))
+	}
+	return bs
+}
+
+func hex2Byte(hexBytes []byte) byte {
+	if len(hexBytes) > 2 {
 		return 0
 	}
-	parsed, err := strconv.ParseUint(string(bytes), 16, 16)
+	parsed, err := strconv.ParseUint(string(hexBytes), 16, 16)
 	if err != nil {
 		return 0
 	}
@@ -134,24 +199,17 @@ func sendRequest(c connector.Connector, encoded []byte) ([]byte, error) {
 	return readBytes, nil
 }
 
-func encodeProtocolVersion() ([]byte, error) {
-	f := newFrame(1, GetProtocolVersion, nil)
-
-	encode, err := f.encode()
-	return encode, err
-}
-
 type frame struct {
 	ver  byte
 	adr  byte
 	cid1 byte
-	cid2 Command
+	cid2 command
 	info []byte
 }
 
-func newFrame(address byte, command Command, info []byte) *frame {
+func newFrame(address byte, command command, info []byte) *frame {
 	return &frame{
-		ver:  Version,
+		ver:  defaultVersion,
 		adr:  address,
 		cid1: batteryData,
 		cid2: command,
