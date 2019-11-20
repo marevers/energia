@@ -12,7 +12,7 @@ import (
 	"github.com/dbld-org/energia/internal/connector"
 )
 
-//go:generate enumer -type=Command -json
+//go:generate enumer -type=command -json
 type command uint8
 
 const (
@@ -114,8 +114,7 @@ func parseResponse(response []byte) (*frame, error) {
 	f.cid1 = hex2Byte(respData[4:6])
 	f.cid2 = command(hex2Byte(respData[6:8]))
 
-	infoLen := uint16(hex2Byte(respData[8:10])) << 8 & uint16(hex2Byte(respData[10:12]))
-	log.Printf("received length: %04X", infoLen)
+	infoLen := uint16(hex2Byte(respData[8:10]))<<8 | uint16(hex2Byte(respData[10:12]))
 	var info []byte
 	if len(respData) > 12 {
 		info = respData[12:]
@@ -128,7 +127,7 @@ func parseResponse(response []byte) (*frame, error) {
 	if lenCheck != infoLen {
 		return nil, fmt.Errorf("invalid length, received %v, calculated %v", infoLen, lenCheck)
 	}
-	f.info = info
+	f.info = hex2Bytes(info)
 
 	return f, nil
 }
@@ -139,7 +138,7 @@ func hex2Bytes(hexBytes []byte) []byte {
 		return nil
 	}
 
-	bs := make([]byte, hexLen/2)
+	bs := make([]byte, 0, hexLen/2)
 	for i := 0; i < hexLen; i += 2 {
 		bs = append(bs, hex2Byte(hexBytes[i:i+2]))
 	}
@@ -233,7 +232,7 @@ func (f *frame) encode() ([]byte, error) {
 	}
 	buf.WriteString(fmt.Sprintf("%04X", checksum))
 	buf.WriteByte(end)
-	log.Println("Encoded: ", buf.String())
+	log.Printf("Encoded: %s", buf.String())
 	return buf.Bytes(), nil
 }
 

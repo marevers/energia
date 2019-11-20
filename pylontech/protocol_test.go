@@ -79,8 +79,29 @@ func Test_encodeProtocolVersion(t *testing.T) {
 
 }
 
-func Test_parseResponse(t *testing.T) {
+func Test_parseProtocolVersionResponse(t *testing.T) {
 	want := "~200146000000FDB3\r"
+	got, err := parseResponse([]byte(want))
+	fmt.Println(got)
+
+	if err != nil {
+		t.Errorf("parseResponse() error = %v", err)
+		return
+	}
+
+	bytes, err := got.encode()
+	if err != nil {
+		t.Errorf("parseResponse() error = %v", err)
+		return
+	}
+
+	if string(bytes) != want {
+		t.Errorf("parseResponse() got = %v, want %v", string(bytes), want)
+	}
+}
+
+func Test_parseManufacturerInfoResponse(t *testing.T) {
+	want := "~20014600C0405553324B42504C000000020150796C6F6E2D2D2D2D2D2D2D2D2D2D2D2D2D2D2DEF9B\r"
 	got, err := parseResponse([]byte(want))
 	fmt.Println(got)
 
