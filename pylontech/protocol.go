@@ -80,9 +80,11 @@ func GetManufacturerInfo(c connector.Connector) (*ManufacturerInfo, error) {
 
 func parseManufacturerInfo(info []byte) (*ManufacturerInfo, error) {
 	man := &ManufacturerInfo{
-		DeviceName:       string(info[0:10]),
-		SoftwareVersion:  string(hex2Bytes(info[10:14])),
-		ManufacturerName: string(info[14:]),
+		DeviceName: strings.TrimFunc(string(info[0:10]), func(r rune) bool {
+			return r < 32
+		}),
+		SoftwareVersion:  fmt.Sprintf("%d%d", info[10], info[11]),
+		ManufacturerName: string(info[12:]),
 	}
 	return man, nil
 }

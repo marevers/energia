@@ -121,3 +121,37 @@ func Test_parseManufacturerInfoResponse(t *testing.T) {
 	}
 
 }
+
+func Test_parseManufacturerInfo(t *testing.T) {
+	want := ManufacturerInfo{"US2KBPL", "21", "Pylon---------------"}
+
+	resp := "~20014600C0405553324B42504C000000020150796C6F6E2D2D2D2D2D2D2D2D2D2D2D2D2D2D2DEF9B\r"
+
+	f, err := parseResponse([]byte(resp))
+	if err != nil {
+		t.Errorf("parseResponse() error = %v", err)
+		return
+	}
+
+	got, err := parseManufacturerInfo(f.info)
+	if err != nil {
+		t.Errorf("parseManufacturerInfo() error = %v", err)
+		return
+	}
+
+	if got.DeviceName != want.DeviceName {
+		t.Errorf("parseManufacturerInfo() got = [%v], want [%v]", got.DeviceName, want.DeviceName)
+		return
+	}
+
+	if got.SoftwareVersion != want.SoftwareVersion {
+		t.Errorf("parseManufacturerInfo() got = [%v], want [%v]", got.SoftwareVersion, want.SoftwareVersion)
+		return
+	}
+
+	if got.ManufacturerName != want.ManufacturerName {
+		t.Errorf("parseManufacturerInfo() got = [%v], want [%v]", got.ManufacturerName, want.ManufacturerName)
+		return
+	}
+
+}
