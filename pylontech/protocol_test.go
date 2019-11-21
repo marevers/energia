@@ -1,6 +1,7 @@
 package pylontech
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 )
@@ -154,4 +155,24 @@ func Test_parseManufacturerInfo(t *testing.T) {
 		return
 	}
 
+}
+
+func Test_parseBatteryGroupStatus(t *testing.T) {
+
+	resp :=
+		"~20014600B0D811020F0D6F0D6F0D6D0D6F0D6C0D6E0D6F0D6E0D760D780D760D780D770D780D76050BAF0B7D0B7D0B7D0B7D0000C9B2C35002C35000050F0DEE0DF80DF50DF20DF00DEE0DF60DF60E040E020E030E030E030E040E04050BB90B7D0B7D0B7D0B7D0000D1AEC35002C3500011CD77\r"
+
+	f, err := parseResponse([]byte(resp))
+	if err != nil {
+		t.Errorf("parseResponse() error = %v", err)
+		return
+	}
+
+	got, err := parseBatteryGroupStatus(f.info)
+	if err != nil {
+		t.Errorf("parseManufacturerInfo() error = %v", err)
+		return
+	}
+
+	fmt.Println(json.MarshalIndent(got, "", "   "))
 }

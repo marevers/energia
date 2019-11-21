@@ -2,6 +2,7 @@ package pylontech
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"strconv"
@@ -90,23 +91,78 @@ func parseManufacturerInfo(info []byte) (*ManufacturerInfo, error) {
 	return man, nil
 }
 
-func GetBatteryStatus(c connector.Connector) (string, error) {
+type BatteryStatus struct {
+	CellCount         int
+	CellVoltage       []float32
+	TempCount         int
+	Temperature       []float32
+	Current           float32
+	TotalVoltage      float32
+	RemainingCapacity float32
+	TotalCapacity     float32
+	Cycles            int
+}
+
+type BatteryGroupStatus struct {
+	FlagData byte
+	Count    int
+	Status   []BatteryStatus
+}
+
+func GetBatteryStatus(c connector.Connector) (*BatteryGroupStatus, error) {
 	encoded, err := encodeBatteryStatus(1, AllBatteries)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	response, err := sendRequest(c, encoded)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	decoded, err := parseResponse(response)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return fmt.Sprintf("%s", decoded.info), err
+	return parseBatteryGroupStatus(decoded.info)
+}
+
+func parseBatteryGroupStatus(info []byte) (*BatteryGroupStatus, error) {
+	bgs := &BatteryGroupStatus{}
+	bgs.FlagData = info[0]
+	bgs.Count = int(info[1])
+
+	statusLen := 0
+	for i := 0; i < bgs.Count; i++ {
+		bs := BatteryStatus{}
+		statusStart := i*statusLen + 2
+		bs.CellCount = int(info[statusStart])
+		bs.TempCount = int(info[statusStart+bs.CellCount*2+1])
+		if statusLen == 0 {
+			statusLen = 1 + bs.CellCount*2 + 1 + bs.TempCount*2 + 3*2 + 1 + 2*2
+		}
+		for j := 0; j < bs.CellCount; j++ {
+			bs.CellVoltage = append(bs.CellVoltage, float32(binary.BigEndian.Uint16(info[statusStart+1+j*2:statusStart+1+j*2+2]))/1000.0)
+		}
+
+		for k := 0; k < bs.TempCount; k++ {
+			deciKelvin := int(binary.BigEndian.Uint16(info[statusStart+1+bs.CellCount*2+1+k*2 : statusStart+1+bs.CellCount*2+1+k*2+2]))
+			const celsiusScale = 2731
+			bs.Temperature = append(bs.Temperature, (float32(deciKelvin)-celsiusScale)/10.0)
+		}
+
+		currentIndex := statusStart + 1 + bs.CellCount*2 + 1 + bs.TempCount*2
+		bs.Current = float32(int(binary.BigEndian.Uint16(info[currentIndex:currentIndex+2]))) / 100.0
+		bs.TotalVoltage = float32(int(binary.BigEndian.Uint16(info[currentIndex+2:currentIndex+4]))) / 1000.0
+		bs.RemainingCapacity = float32(int(binary.BigEndian.Uint16(info[currentIndex+4:currentIndex+6]))) / 1000.0
+		bs.TotalCapacity = float32(int(binary.BigEndian.Uint16(info[currentIndex+7:currentIndex+9]))) / 1000.0
+		bs.Cycles = int(binary.BigEndian.Uint16(info[currentIndex+9 : currentIndex+11]))
+
+		bgs.Status = append(bgs.Status, bs)
+	}
+
+	return bgs, nil
 }
 
 func encodeBatteryStatus(address byte, batteryNumber byte) ([]byte, error) {

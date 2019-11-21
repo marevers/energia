@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"log"
 	"time"
@@ -55,10 +56,12 @@ func main() {
 
 	manufacturerInfo, err := pylontech.GetManufacturerInfo(sc)
 
-	log.Println("Manufacturer info:", manufacturerInfo)
+	bytes, err := json.MarshalIndent(manufacturerInfo, "", "   ")
+	log.Println("Manufacturer info:", string(bytes))
 
 	batteryStatus, err := pylontech.GetBatteryStatus(sc)
 
-	log.Println("Battery status:", batteryStatus)
+	bytes, err = json.MarshalIndent(batteryStatus, "", "   ")
+	log.Println("Battery status:", string(bytes))
 
 }
