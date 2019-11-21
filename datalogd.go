@@ -49,6 +49,8 @@ func main() {
 	clientOpts.SetStore(mqtt.NewFileStore("/tmp/mqtt"))
 	clientOpts.SetCleanSession(false)
 	clientOpts.SetClientID(clientId)
+	clientOpts.SetOnConnectHandler(logConnect)
+	clientOpts.SetConnectionLostHandler(logConnectionLost)
 
 	client := mqtt.NewClient(clientOpts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -139,4 +141,12 @@ func sendMessage(data messageData, client mqtt.Client) error {
 	token := client.Publish(mqttTopic, 1, true, msg)
 	token.Wait()
 	return nil
+}
+
+func logConnect(_ mqtt.Client) {
+	fmt.Println("Connected to broker")
+}
+
+func logConnectionLost(_ mqtt.Client, err error) {
+	fmt.Println("Connection lost:", err)
 }
