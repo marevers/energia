@@ -57,4 +57,8 @@ func main() {
 
 	log.Println("Manufacturer info:", manufacturerInfo)
 
+	batteryStatus, err := pylontech.GetBatteryStatus(sc)
+
+	log.Println("Battery status:", batteryStatus)
+
 }

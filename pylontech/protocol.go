@@ -16,7 +16,7 @@ import (
 type command uint8
 
 const (
-	getAnalogValue          command = 0x42
+	getBatteryStatus        command = 0x42
 	getAlarmData                    = 0x44
 	getSystemParameter              = 0x47
 	getProtocolVersion              = 0x4F
@@ -28,6 +28,7 @@ const (
 )
 
 const (
+	AllBatteries   = 0xFF
 	defaultVersion = 0x20
 	start          = 0x7E
 	end            = 0x0D
@@ -87,6 +88,36 @@ func parseManufacturerInfo(info []byte) (*ManufacturerInfo, error) {
 		ManufacturerName: string(info[12:]),
 	}
 	return man, nil
+}
+
+func GetBatteryStatus(c connector.Connector) (string, error) {
+	encoded, err := encodeBatteryStatus(1, AllBatteries)
+	if err != nil {
+		return "", err
+	}
+
+	response, err := sendRequest(c, encoded)
+	if err != nil {
+		return "", err
+	}
+
+	decoded, err := parseResponse(response)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s", decoded.info), err
+}
+
+func encodeBatteryStatus(address byte, batteryNumber byte) ([]byte, error) {
+	if batteryNumber == 0 {
+		batteryNumber = AllBatteries
+	}
+
+	f := newFrame(address, getBatteryStatus, []byte{batteryNumber})
+
+	encode, err := f.encode()
+	return encode, err
 }
 
 func encodeManufacturerInfo() ([]byte, error) {
