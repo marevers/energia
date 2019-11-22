@@ -191,7 +191,7 @@ func encodeProtocolVersion() ([]byte, error) {
 }
 
 func parseResponse(response []byte) (*frame, error) {
-	log.Printf("received response: [%s]", string(response))
+	log.Printf("received response: [%s]", string(response[:len(response)-1]))
 	respData, err := validateResponse(response)
 	if err != nil {
 		return nil, err
