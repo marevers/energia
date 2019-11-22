@@ -140,9 +140,6 @@ func parseBatteryGroupStatus(info []byte) (*BatteryGroupStatus, error) {
 		statusStart := i*statusLen + 2
 		bs.CellCount = int(info[statusStart])
 		bs.TempCount = int(info[statusStart+bs.CellCount*2+1])
-		if statusLen == 0 {
-			statusLen = 1 + bs.CellCount*2 + 1 + bs.TempCount*2 + 3*2 + 1 + 2*2
-		}
 		for j := 0; j < bs.CellCount; j++ {
 			bs.CellVoltage = append(bs.CellVoltage, float32(binary.BigEndian.Uint16(info[statusStart+1+j*2:statusStart+1+j*2+2]))/1000.0)
 		}
@@ -155,9 +152,30 @@ func parseBatteryGroupStatus(info []byte) (*BatteryGroupStatus, error) {
 		currentIndex := statusStart + 1 + bs.CellCount*2 + 1 + bs.TempCount*2
 		bs.Current = float32(int(binary.BigEndian.Uint16(info[currentIndex:currentIndex+2]))) / 100.0
 		bs.TotalVoltage = float32(int(binary.BigEndian.Uint16(info[currentIndex+2:currentIndex+4]))) / 1000.0
-		bs.RemainingCapacity = float32(int(binary.BigEndian.Uint16(info[currentIndex+4:currentIndex+6]))) / 1000.0
-		bs.TotalCapacity = float32(int(binary.BigEndian.Uint16(info[currentIndex+7:currentIndex+9]))) / 1000.0
+		capacityIndicator := info[currentIndex+6]
+
+		//Think here
+		capacityLen := 0
+
+		if capacityIndicator == 2 {
+			bs.RemainingCapacity = float32(int(binary.BigEndian.Uint16(info[currentIndex+4:currentIndex+6]))) / 1000.0
+			bs.TotalCapacity = float32(int(binary.BigEndian.Uint16(info[currentIndex+7:currentIndex+9]))) / 1000.0
+		} else {
+			capacityLen = 6
+			rcPos := []byte{0}
+			rcPos = append(rcPos, info[currentIndex+11:currentIndex+14]...)
+			bs.RemainingCapacity = float32(int(binary.BigEndian.Uint32(rcPos))) / 1000.0
+			tcPos := []byte{0}
+			tcPos = append(tcPos, info[currentIndex+14:currentIndex+17]...)
+			bs.TotalCapacity = float32(int(binary.BigEndian.Uint32(tcPos))) / 1000.0
+
+		}
 		bs.Cycles = int(binary.BigEndian.Uint16(info[currentIndex+9 : currentIndex+11]))
+
+		// Check what the length of bits used for voltage values should be.
+		if statusLen == 0 {
+			statusLen = 1 + bs.CellCount*2 + 1 + bs.TempCount*2 + 3*2 + 1 + 2*2 + capacityLen
+		}
 
 		bgs.Status = append(bgs.Status, bs)
 	}
