@@ -141,17 +141,18 @@ func parseBatteryGroupStatus(info []byte) (*BatteryGroupStatus, error) {
 		bs.CellCount = int(info[statusStart])
 		bs.TempCount = int(info[statusStart+bs.CellCount*2+1])
 		for j := 0; j < bs.CellCount; j++ {
-			bs.CellVoltage = append(bs.CellVoltage, float32(binary.BigEndian.Uint16(info[statusStart+1+j*2:statusStart+1+j*2+2]))/1000.0)
+			bs.CellVoltage = append(bs.CellVoltage, float32(int16(binary.BigEndian.Uint16(info[statusStart+1+j*2:statusStart+1+j*2+2])))/1000.0)
 		}
 
 		for k := 0; k < bs.TempCount; k++ {
-			deciKelvin := int(binary.BigEndian.Uint16(info[statusStart+1+bs.CellCount*2+1+k*2 : statusStart+1+bs.CellCount*2+1+k*2+2]))
+			deciKelvin := int16(binary.BigEndian.Uint16(info[statusStart+1+bs.CellCount*2+1+k*2 : statusStart+1+bs.CellCount*2+1+k*2+2]))
 			bs.Temperature = append(bs.Temperature, (float32(deciKelvin)-celsiusScale)/10.0)
 		}
 
 		currentIndex := statusStart + 1 + bs.CellCount*2 + 1 + bs.TempCount*2
-		bs.Current = float32(int(binary.BigEndian.Uint16(info[currentIndex:currentIndex+2]))) / 100.0
-		bs.TotalVoltage = float32(int(binary.BigEndian.Uint16(info[currentIndex+2:currentIndex+4]))) / 1000.0
+		bs.Current = float32(int16(binary.BigEndian.Uint16(info[currentIndex:currentIndex+2]))) / 100.0
+
+		bs.TotalVoltage = float32(binary.BigEndian.Uint16(info[currentIndex+2:currentIndex+4])) / 1000.0
 		capacityIndicator := info[currentIndex+6]
 
 		//Think here

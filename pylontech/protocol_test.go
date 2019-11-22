@@ -3,6 +3,7 @@ package pylontech
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"testing"
 )
 
@@ -169,12 +170,14 @@ func Test_parseBatteryGroupStatusUS2000B(t *testing.T) {
 	}
 
 	got, err := parseBatteryGroupStatus(f.info)
+	bytes, err := json.Marshal(got)
+	fmt.Println(string(bytes))
+
 	if err != nil {
 		t.Errorf("parseManufacturerInfo() error = %v", err)
 		return
 	}
 
-	fmt.Println(json.MarshalIndent(got, "", "   "))
 }
 
 func Test_parseBatteryGroupStatusUS3000A(t *testing.T) {
@@ -189,10 +192,42 @@ func Test_parseBatteryGroupStatusUS3000A(t *testing.T) {
 	}
 
 	got, err := parseBatteryGroupStatus(f.info)
+	bytes, err := json.Marshal(got)
+	fmt.Println(string(bytes))
+
 	if err != nil {
 		t.Errorf("parseManufacturerInfo() error = %v", err)
 		return
 	}
 
-	fmt.Println(json.MarshalIndent(got, "", "   "))
+	if math.Abs(float64(74.0-got.Status[0].TotalCapacity)) > 0.01 {
+		t.Error("parseBatteryGroupStatus(), total capacity should be 74 ")
+	}
+
+}
+
+func Test_parseBatteryGroupStatusNegativeCurrent(t *testing.T) {
+
+	resp :=
+		"~2001460010F011020F0D6F0D780D770D770D740D740D740D720D7B0D790D7A0D7A0D790D7A0D77050BCD0BC30BC30BCD0BC3FFFEC9F5FFFF04FFFF010A0126D80121100F0D770D780D790D790D780D780D780D690D7A0D790D760D780D780D790D78050BCD0BC30BC30BCD0BC3FFFEC9FCFFFF04FFFF01060126D8012110C74C\r"
+
+	f, err := parseResponse([]byte(resp))
+	if err != nil {
+		t.Errorf("parseResponse() error = %v", err)
+		return
+	}
+
+	got, err := parseBatteryGroupStatus(f.info)
+	bytes, err := json.Marshal(got)
+	fmt.Println(string(bytes))
+
+	if err != nil {
+		t.Errorf("parseBatteryGroupStatus() error = %v", err)
+		return
+	}
+
+	if got.Status[0].Current > 0 {
+		t.Error("parseBatteryGroupStatus(), current should be negative ")
+	}
+
 }
