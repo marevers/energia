@@ -34,6 +34,7 @@ const (
 	start          = 0x7E
 	end            = 0x0D
 	batteryData    = 0x46
+	celsiusScale   = 2731
 )
 
 func GetProtocolVersion(c connector.Connector) (string, error) {
@@ -148,7 +149,6 @@ func parseBatteryGroupStatus(info []byte) (*BatteryGroupStatus, error) {
 
 		for k := 0; k < bs.TempCount; k++ {
 			deciKelvin := int(binary.BigEndian.Uint16(info[statusStart+1+bs.CellCount*2+1+k*2 : statusStart+1+bs.CellCount*2+1+k*2+2]))
-			const celsiusScale = 2731
 			bs.Temperature = append(bs.Temperature, (float32(deciKelvin)-celsiusScale)/10.0)
 		}
 

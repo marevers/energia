@@ -157,10 +157,30 @@ func Test_parseManufacturerInfo(t *testing.T) {
 
 }
 
-func Test_parseBatteryGroupStatus(t *testing.T) {
+func Test_parseBatteryGroupStatusUS2000B(t *testing.T) {
 
 	resp :=
 		"~20014600B0D811020F0D6F0D6F0D6D0D6F0D6C0D6E0D6F0D6E0D760D780D760D780D770D780D76050BAF0B7D0B7D0B7D0B7D0000C9B2C35002C35000050F0DEE0DF80DF50DF20DF00DEE0DF60DF60E040E020E030E030E030E040E04050BB90B7D0B7D0B7D0B7D0000D1AEC35002C3500011CD77\r"
+
+	f, err := parseResponse([]byte(resp))
+	if err != nil {
+		t.Errorf("parseResponse() error = %v", err)
+		return
+	}
+
+	got, err := parseBatteryGroupStatus(f.info)
+	if err != nil {
+		t.Errorf("parseManufacturerInfo() error = %v", err)
+		return
+	}
+
+	fmt.Println(json.MarshalIndent(got, "", "   "))
+}
+
+func Test_parseBatteryGroupStatusUS3000A(t *testing.T) {
+
+	resp :=
+		"~2001460010F011020F0D1A0D220D220D200D1D0D210D1D0D190D1A0D1E0D210D1F0D1C0D1A0D1C050BB90BB90BB90BC30BB900BEC4BCFFFF04FFFF010A00BEC80121100F0D220D230D1F0D1C0D1C0D1C0D1C0D1A0D1C0D1D0D1D0D1C0D1C0D1C0D1D050BC30BB90BB90BB90BB900BDC4B5FFFF04FFFF010600B900012110C7D3\r"
 
 	f, err := parseResponse([]byte(resp))
 	if err != nil {
