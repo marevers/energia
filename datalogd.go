@@ -44,12 +44,15 @@ type messageData struct {
 }
 
 func main() {
+    fmt.Println("initializing config ")
 
 	err := initConfig()
+    fmt.Println("initialized config ", viper.AllSettings())
 	if err != nil {
 		panic(err)
 	}
 
+    fmt.Println("connecting to ", inverterPath)
 	uc, err := connector.NewUSBConnector(inverterPath)
 	if err != nil {
 		panic(err)
@@ -220,17 +223,20 @@ func initConfig() error {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
-	viper.SetConfigName("datalog-conf")
+	viper.SetConfigName("datalogd-conf")
 	if configPath != "" {
 		viper.AddConfigPath(configPath)
 	}
 	err := viper.ReadInConfig()
-	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-		fmt.Println("Config file not found, relying on defaults/ENV")
-	} else {
-		return err
-	}
+    if err != nil {
+        if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+            fmt.Println("Config file not found, relying on defaults/ENV")
+        } else {
+            return err
+        }
+    }
 
+    fmt.Println("config: ", viper.AllSettings())
 	timerInterval = viper.GetInt("timer.interval")
 	mqttServer = viper.GetString("mqtt.server")
 	mqttPort = viper.GetInt("mqtt.port")
