@@ -217,7 +217,6 @@ func initConfig() error {
 	viper.AutomaticEnv()
 
 	viper.SetConfigName("datalog-conf")
-	viper.AddConfigPath(".")
 	if configPath != "" {
 		viper.AddConfigPath(configPath)
 	}
