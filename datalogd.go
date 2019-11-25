@@ -26,6 +26,8 @@ var timerInterval int
 var mqttServer string
 var mqttPort int
 var mqttClientId string
+var mqttUsername string
+var mqttPassword string
 
 var inverterPath string
 var inverterCount int
@@ -83,6 +85,8 @@ func main() {
 	clientOpts.SetClientID(mqttClientId)
 	clientOpts.SetOnConnectHandler(logConnect)
 	clientOpts.SetConnectionLostHandler(logConnectionLost)
+	clientOpts.SetUsername(mqttUsername)
+	clientOpts.SetPassword(mqttPassword)
 
 	client := mqtt.NewClient(clientOpts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -230,6 +234,8 @@ func initConfig() error {
 	timerInterval = viper.GetInt("timer.interval")
 	mqttServer = viper.GetString("mqtt.server")
 	mqttPort = viper.GetInt("mqtt.port")
+	mqttUsername = viper.GetString("mqtt.username")
+	mqttPassword = viper.GetString("mqtt.password")
 	mqttClientId = viper.GetString("mqtt.clientId")
 	inverterPath = viper.GetString("inverter.path")
 	inverterCount = viper.GetInt("inverter.count")
