@@ -1,14 +1,6 @@
-package axpert
+package connector
 
 import "github.com/kristoiv/hid"
-
-type Connector interface {
-	Open() error
-	Close()
-	ReadUntilCR() ([]byte, error)
-	Read(terminator byte) ([]byte, error)
-	Write(bytes []byte) error
-}
 
 type USBConnector struct {
 	deviceInfo *hid.DeviceInfo

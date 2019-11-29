@@ -6,7 +6,8 @@ import (
 
 	"github.com/kristoiv/hid"
 
-	"github.com/dbld-org/energia/axpert"
+	"github.com/mindworks-software/energia/internal/connector"
+	"github.com/mindworks-software/energia/pkg/axpert"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 		di = dev
 	}
 
-	conn, err := axpert.NewUSBConnector(di.Path)
+	conn, err := connector.NewUSBConnector(di.Path)
 	if err != nil {
 		panic(err)
 	}

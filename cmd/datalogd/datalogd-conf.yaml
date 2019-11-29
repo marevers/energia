@@ -1,0 +1,17 @@
+timer:
+  interval: 10
+
+mqtt:
+  server: 10.147.20.10
+  port: 1883
+  clientId: datalogd-ng
+
+inverter:
+  path: /dev/hidraw0
+  count: 1
+  topic: datalogd-ng/inverter
+
+battery:
+  path: /dev/ttyUSB0
+  baud: 1200
+  topic: datalogd-ng/battery
