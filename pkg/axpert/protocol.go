@@ -9,7 +9,7 @@ import (
 
 	"github.com/howeyc/crc16"
 
-	"github.com/mindworks-software/energia/internal/connector"
+	"github.com/mindworks-software/energia/pkg/connector"
 )
 
 const (

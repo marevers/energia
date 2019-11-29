@@ -8,7 +8,7 @@ import (
 
 	"github.com/goburrow/serial"
 
-	"github.com/mindworks-software/energia/internal/connector"
+	"github.com/mindworks-software/energia/pkg/connector"
 	"github.com/mindworks-software/energia/pkg/pylontech"
 )
 
