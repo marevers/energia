@@ -10,7 +10,7 @@ import (
 
 	"github.com/tmthrgd/go-hex"
 
-	"github.com/dbld-org/energia/internal/connector"
+	"github.com/mindworks-software/energia/internal/connector"
 )
 
 //go:generate enumer -type=command -json

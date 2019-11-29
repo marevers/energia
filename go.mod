@@ -1,4 +1,4 @@
-module github.com/dbld-org/energia
+module github.com/mindworks-software/energia
 
 go 1.13
 

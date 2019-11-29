@@ -6,8 +6,8 @@ import (
 
 	"github.com/kristoiv/hid"
 
-	"github.com/dbld-org/energia/axpert"
-	"github.com/dbld-org/energia/internal/connector"
+	"github.com/mindworks-software/energia/axpert"
+	"github.com/mindworks-software/energia/internal/connector"
 )
 
 func main() {
