@@ -9,7 +9,7 @@ import (
 	"github.com/goburrow/serial"
 
 	"github.com/mindworks-software/energia/internal/connector"
-	"github.com/mindworks-software/energia/pylontech"
+	"github.com/mindworks-software/energia/pkg/pylontech"
 )
 
 var (
