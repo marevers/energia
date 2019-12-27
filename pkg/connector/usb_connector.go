@@ -4,6 +4,7 @@ import (
 	"github.com/kristoiv/hid"
 	"fmt"
 	"time"
+	"errors"
 )
 
 type USBConnector struct {
@@ -51,7 +52,7 @@ func (uc *USBConnector) ReadUntilCR() ([]byte, error) {
 	return uc.Read(0x0d)
 }
 
-// TODO This should take timout as argument or set by config 
+// TODO This should take timout as argument or set by config
 func (uc *USBConnector) Read(terminator byte) ([]byte, error) {
 	ch := uc.device.ReadCh()
 	bytesRead := make([]byte, 0, 8)
@@ -68,7 +69,9 @@ func (uc *USBConnector) Read(terminator byte) ([]byte, error) {
 					}
 				}
 			case <-time.After(3 * time.Second):
-				fmt.Println("Timed out reading HID")
+				fmt.Println("Timeout reading HID")
+				reading = false
+				return nil, errors.New("Timeout reading HID")
 			}
 		}
 	return bytesRead, nil
