@@ -1,6 +1,10 @@
 package connector
 
-import "github.com/kristoiv/hid"
+import (
+	"github.com/kristoiv/hid"
+	"fmt"
+	"time"
+)
 
 type USBConnector struct {
 	deviceInfo *hid.DeviceInfo
@@ -47,23 +51,28 @@ func (uc *USBConnector) ReadUntilCR() ([]byte, error) {
 	return uc.Read(0x0d)
 }
 
-// TODO This should have a timeout
+// TODO This should take timout as argument or set by config
 func (uc *USBConnector) Read(terminator byte) ([]byte, error) {
 	ch := uc.device.ReadCh()
 	bytesRead := make([]byte, 0, 8)
 	reading := true
 	for reading {
-		bs := <-ch
-		for _, b := range bs {
-			if b > 0 {
-				bytesRead = append(bytesRead, b)
-			}
-			if b == terminator {
+		select {
+			case bs := <-ch:
+				for _, b := range bs {
+					if b > 0 {
+						bytesRead = append(bytesRead, b)
+					}
+					if b == terminator {
+						reading = false
+					}
+				}
+			case <-time.After(3 * time.Second):
+				fmt.Println("Timeout reading HID")
 				reading = false
+				return nil, error.New("Timeout reading HID")
 			}
 		}
-	}
-
 	return bytesRead, nil
 }
 

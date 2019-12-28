@@ -6,7 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-
+	"time"
 	"github.com/howeyc/crc16"
 
 	"github.com/mindworks-software/energia/pkg/connector"
@@ -732,6 +732,7 @@ func sendCommand(c connector.Connector, command string) error {
 }
 
 func sendRequest(c connector.Connector, req string) (resp string, err error) {
+	defer timeTrack(time.Now(), "timing : " + req)
 	log.Println("Sending request", req)
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)
@@ -1444,4 +1445,9 @@ func parseParallelPVInfo(resp string, info *ParallelInfo) (*ParallelInfo, error)
 	// TODO: Someday, maybe, parse PV2 & PV3 values
 
 	return info, nil
+}
+
+func timeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
 }
