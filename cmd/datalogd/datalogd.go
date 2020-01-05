@@ -64,21 +64,26 @@ func main() {
 	defer uc.Close()
 	fmt.Println("connected to ", inverterPath)
 
-	serialConfig := serial.Config{
-		Address:  batteryPath,
-		BaudRate: batteryBaud,
-		DataBits: 8,
-		StopBits: 1,
-		Parity:   "N",
-		Timeout:  30 * time.Second,
-	}
+	var sc connector.Connector
 
-	sc := connector.NewSerialConnector(serialConfig)
-	err = sc.Open()
-	if err != nil {
-		log.Panic(err)
+	if viper.IsSet(batteryPath) {
+
+		serialConfig := serial.Config{
+			Address:  batteryPath,
+			BaudRate: batteryBaud,
+			DataBits: 8,
+			StopBits: 1,
+			Parity:   "N",
+			Timeout:  30 * time.Second,
+		}
+
+		sc = connector.NewSerialConnector(serialConfig)
+		err = sc.Open()
+		if err != nil {
+			log.Panic(err)
+		}
+		defer sc.Close()
 	}
-	defer sc.Close()
 
 	clientOpts := mqtt.NewClientOptions()
 	clientOpts.AddBroker("tcp://" + mqttServer + ":" + strconv.Itoa(mqttPort))
@@ -158,14 +163,14 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-
-			batteryStatus, err := pylontech.GetBatteryStatus(sc)
-			msgData = messageData{Timestamp: t, MessageType: "BatteryStatus", Data: batteryStatus}
-			err = sendBatteryMessage(msgData, client)
-			if err != nil {
-				panic(err)
+			if viper.IsSet(batteryPath) {
+				batteryStatus, err := pylontech.GetBatteryStatus(sc)
+				msgData = messageData{Timestamp: t, MessageType: "BatteryStatus", Data: batteryStatus}
+				err = sendBatteryMessage(msgData, client)
+				if err != nil {
+					panic(err)
+				}
 			}
-
 		}
 	}()
 
@@ -180,7 +185,7 @@ func main() {
 }
 
 func sendInverterMessage(data messageData, client mqtt.Client) error {
-	return sendMessage(data, inverterTopic, client)
+	return sendMessage(data, inverterTopic+"/"+data.MessageType, client)
 }
 
 func sendBatteryMessage(data messageData, client mqtt.Client) error {
