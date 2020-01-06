@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/eclipse/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/goburrow/serial"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -43,6 +43,16 @@ type messageData struct {
 	Data        interface{}
 }
 
+type queryFunc func(chan connector.Connector, mqtt.Client, time.Time) error
+
+type query struct {
+	f        queryFunc
+	cc       chan connector.Connector
+	interval time.Duration
+}
+
+var ucc chan connector.Connector
+
 func main() {
 	fmt.Println("initializing config ")
 
@@ -62,9 +72,13 @@ func main() {
 		panic(err)
 	}
 	defer uc.Close()
+
+	ucc = make(chan connector.Connector, 1)
+	ucc <- uc
 	fmt.Println("connected to ", inverterPath)
 
 	var sc connector.Connector
+	var scc chan connector.Connector
 
 	if viper.IsSet(batteryPath) {
 
@@ -83,6 +97,9 @@ func main() {
 			log.Panic(err)
 		}
 		defer sc.Close()
+
+		scc = make(chan connector.Connector, 1)
+		scc <- sc
 	}
 
 	clientOpts := mqtt.NewClientOptions()
@@ -105,74 +122,27 @@ func main() {
 
 	ticker := time.NewTicker(time.Duration(timerInterval) * time.Second)
 
-	go func() {
-		for t := range ticker.C {
-			mode, err := axpert.DeviceMode(uc)
-			if err != nil {
-				panic(err)
-			}
-			m := map[string]string{"Mode": mode}
-			msgData := messageData{Timestamp: t, MessageType: "Mode", Data: m}
-			err = sendInverterMessage(msgData, client)
-			if err != nil {
-				panic(err)
-			}
+	// todo create list of scheduled funcit0ons
+	queries := []query{
+		{deviceMode, ucc, 30 * time.Second},
+		{parallelDeviceInfo, ucc, 30 * time.Second},
+		{deviceGeneralStatus, ucc, 10 * time.Second},
+		{deviceFlagStatus, ucc, 30 * time.Second},
+		{warningStatus, ucc, 30 * time.Second},
+		{deviceRating, ucc, 30 * time.Second},
+	}
 
-			for inv := 0; inv < inverterCount; inv++ {
-				deviceInfo, err := axpert.ParallelDeviceInfo(uc, inv)
-				if err != nil {
-					panic(err)
-				}
-				msgData = messageData{Timestamp: t, MessageType: "DeviceInfo", Data: deviceInfo}
-				err = sendInverterMessage(msgData, client)
-				if err != nil {
-					panic(err)
-				}
-			}
+	if viper.IsSet(batteryPath) {
+		queries = append(queries, query{batteryStatus, scc, 10 * time.Second})
+	}
 
-			status, err := axpert.DeviceGeneralStatus(uc)
-			if err != nil {
-				panic(err)
-			}
-			msgData = messageData{Timestamp: t, MessageType: "Status", Data: status}
-			err = sendInverterMessage(msgData, client)
-			if err != nil {
-				panic(err)
-			}
+	ts := make([]*time.Ticker, len(queries))
 
-			warnings, err := axpert.WarningStatus(uc)
-			if err != nil {
-				panic(err)
-			}
-			msgData = messageData{Timestamp: t, MessageType: "Warnings", Data: warnings}
-			err = sendInverterMessage(msgData, client)
-			if err != nil {
-				panic(err)
-			}
+	for i, q := range queries {
+		ts[i] = schedule(q.f, q.interval, q.cc, client)
+	}
 
-			flags, err := axpert.DeviceFlagStatus(uc)
-			msgData = messageData{Timestamp: t, MessageType: "Flags", Data: flags}
-			err = sendInverterMessage(msgData, client)
-			if err != nil {
-				panic(err)
-			}
-
-			ratingInfo, err := axpert.DeviceRatingInfo(uc)
-			msgData = messageData{Timestamp: t, MessageType: "RatingInfo", Data: ratingInfo}
-			err = sendInverterMessage(msgData, client)
-			if err != nil {
-				panic(err)
-			}
-			if viper.IsSet(batteryPath) {
-				batteryStatus, err := pylontech.GetBatteryStatus(sc)
-				msgData = messageData{Timestamp: t, MessageType: "BatteryStatus", Data: batteryStatus}
-				err = sendBatteryMessage(msgData, client)
-				if err != nil {
-					panic(err)
-				}
-			}
-		}
-	}()
+	client.Subscribe("inverter/cmd/setOutputSourcePriority", 1, messageReceiver)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -182,6 +152,145 @@ func main() {
 	ticker.Stop()
 
 	fmt.Println("exiting")
+}
+
+func schedule(f queryFunc, interval time.Duration, ucc chan connector.Connector, client mqtt.Client) *time.Ticker {
+	ticker := time.NewTicker(interval)
+	go func() {
+		for t := range ticker.C {
+			f(ucc, client, t)
+		}
+	}()
+	return ticker
+}
+
+func deviceGeneralStatus(ucc chan connector.Connector, client mqtt.Client, t time.Time) error {
+
+	uc := <-ucc
+
+	defer func() { ucc <- uc }()
+
+	status, err := axpert.DeviceGeneralStatus(uc)
+	if err != nil {
+		return err
+	}
+	msgData := messageData{Timestamp: t, MessageType: "Status", Data: status}
+	err = sendInverterMessage(msgData, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func warningStatus(ucc chan connector.Connector, client mqtt.Client, t time.Time) error {
+
+	uc := <-ucc
+
+	defer func() { ucc <- uc }()
+
+	warnings, err := axpert.WarningStatus(uc)
+	if err != nil {
+		return err
+	}
+	msgData := messageData{Timestamp: t, MessageType: "Warnings", Data: warnings}
+	err = sendInverterMessage(msgData, client)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func deviceFlagStatus(ucc chan connector.Connector, client mqtt.Client, t time.Time) error {
+
+	uc := <-ucc
+
+	defer func() { ucc <- uc }()
+
+	flags, err := axpert.DeviceFlagStatus(uc)
+	msgData := messageData{Timestamp: t, MessageType: "Flags", Data: flags}
+	err = sendInverterMessage(msgData, client)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func deviceRating(ucc chan connector.Connector, client mqtt.Client, t time.Time) error {
+
+	uc := <-ucc
+
+	defer func() { ucc <- uc }()
+
+	ratingInfo, err := axpert.DeviceRatingInfo(uc)
+	msgData := messageData{Timestamp: t, MessageType: "RatingInfo", Data: ratingInfo}
+	err = sendInverterMessage(msgData, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func batteryStatus(ucc chan connector.Connector, client mqtt.Client, t time.Time) error {
+
+	uc := <-ucc
+
+	defer func() { ucc <- uc }()
+
+	batteryStatus, err := pylontech.GetBatteryStatus(uc)
+	msgData := messageData{Timestamp: t, MessageType: "BatteryStatus", Data: batteryStatus}
+	err = sendBatteryMessage(msgData, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func parallelDeviceInfo(ucc chan connector.Connector, client mqtt.Client, t time.Time) error {
+
+	uc := <-ucc
+
+	defer func() { ucc <- uc }()
+
+	for inv := 0; inv < inverterCount; inv++ {
+		deviceInfo, err := axpert.ParallelDeviceInfo(uc, inv)
+		if err != nil {
+			return err
+		}
+		msgData := messageData{Timestamp: t, MessageType: "DeviceInfo", Data: deviceInfo}
+		err = sendInverterMessage(msgData, client)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func deviceMode(ucc chan connector.Connector, client mqtt.Client, t time.Time) error {
+
+	uc := <-ucc
+
+	defer func() { ucc <- uc }()
+
+	mode, err := axpert.DeviceMode(uc)
+	if err != nil {
+		return err
+	}
+	m := map[string]string{"Mode": mode}
+	msgData := messageData{Timestamp: t, MessageType: "Mode", Data: m}
+	err = sendInverterMessage(msgData, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func sendInverterMessage(data messageData, client mqtt.Client) error {
@@ -200,6 +309,35 @@ func sendMessage(data messageData, topic string, client mqtt.Client) error {
 	token := client.Publish(topic, 1, true, msg)
 	token.Wait()
 	return nil
+}
+
+func messageReceiver(client mqtt.Client, msg mqtt.Message) {
+
+	go func() {
+		switch msg.Topic() {
+		case "inverter/cmd/setOutputSourcePriority":
+			fmt.Printf("%s\n", msg.Topic())
+			msg.Topic()
+			msg.Payload()
+			uc := <-ucc
+
+			defer func() { ucc <- uc }()
+			priority, err := strconv.Atoi(string(msg.Payload()))
+			if err != nil {
+				fmt.Println("Value conversion error", err)
+				return
+			}
+
+			err = axpert.SetOutputSourcePriority(uc, axpert.OutputSourcePriority(priority))
+			if err != nil {
+				fmt.Println("Failed sending command ", err)
+				return
+			}
+
+		default:
+			fmt.Printf("%s", msg.Topic())
+		}
+	}()
 }
 
 func logConnect(_ mqtt.Client) {
