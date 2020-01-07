@@ -4,6 +4,7 @@ import (
 	"github.com/kristoiv/hid"
 	"fmt"
 	"time"
+	"errors"
 )
 
 type USBConnector struct {
@@ -70,7 +71,7 @@ func (uc *USBConnector) Read(terminator byte) ([]byte, error) {
 			case <-time.After(3 * time.Second):
 				fmt.Println("Timeout reading HID")
 				reading = false
-				return nil, error.New("Timeout reading HID")
+				return nil, errors.New("Timeout reading HID")
 			}
 		}
 	return bytesRead, nil
