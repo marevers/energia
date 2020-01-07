@@ -80,7 +80,7 @@ func main() {
 	var sc connector.Connector
 	var scc chan connector.Connector
 
-	if viper.IsSet(batteryPath) {
+	if viper.IsSet("battery.path") {
 
 		serialConfig := serial.Config{
 			Address:  batteryPath,
@@ -120,9 +120,6 @@ func main() {
 	defer client.Disconnect(250)
 	fmt.Println("Connected to mqtt")
 
-	ticker := time.NewTicker(time.Duration(timerInterval) * time.Second)
-
-	// todo create list of scheduled funcit0ons
 	queries := []query{
 		{deviceMode, ucc, 30 * time.Second},
 		{parallelDeviceInfo, ucc, 30 * time.Second},
@@ -132,7 +129,7 @@ func main() {
 		{deviceRating, ucc, 30 * time.Second},
 	}
 
-	if viper.IsSet(batteryPath) {
+	if viper.IsSet("battery.path") {
 		queries = append(queries, query{batteryStatus, scc, 10 * time.Second})
 	}
 
@@ -148,8 +145,11 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigChan
 	close(sigChan)
-	fmt.Println(sig, " stopping ticker")
-	ticker.Stop()
+	fmt.Println(sig, " stopping tickers")
+
+	for _, t := range ts {
+		t.Stop()
+	}
 
 	fmt.Println("exiting")
 }
