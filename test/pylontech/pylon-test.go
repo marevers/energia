@@ -8,8 +8,8 @@ import (
 
 	"github.com/goburrow/serial"
 
-	"github.com/mindworks-software/energia/pkg/connector"
-	"github.com/mindworks-software/energia/pkg/pylontech"
+	"github.com/marevers/energia/pkg/connector"
+	"github.com/marevers/energia/pkg/pylontech"
 )
 
 var (

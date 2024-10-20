@@ -16,9 +16,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/mindworks-software/energia/pkg/axpert"
-	"github.com/mindworks-software/energia/pkg/connector"
-	"github.com/mindworks-software/energia/pkg/pylontech"
+	"github.com/marevers/energia/pkg/axpert"
+	"github.com/marevers/energia/pkg/connector"
+	"github.com/marevers/energia/pkg/pylontech"
 )
 
 var timerInterval int
