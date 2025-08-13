@@ -4,28 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kristoiv/hid"
-
 	"github.com/marevers/energia/pkg/axpert"
-	"github.com/marevers/energia/pkg/connector"
 )
 
 func main() {
-	devs, err := hid.Devices()
-	if err != nil {
-		panic(err)
-	}
+	crs, err := axpert.GetUSBInverters()
 
-	var di *hid.DeviceInfo
-	for i, dev := range devs {
-		fmt.Println(i, dev)
-		di = dev
-	}
+	conn := crs[0]
 
-	conn, err := connector.NewUSBConnector(di.Path)
-	if err != nil {
-		panic(err)
-	}
+	fmt.Println(conn.DeviceInfo())
 
 	fmt.Println("Connecting to ", conn.Path())
 	err = conn.Open()
@@ -78,25 +65,6 @@ func main() {
 		fmt.Println(err)
 	}
 	fmt.Println("DSPBootstrapped: ", bootstrapped)
-	/*##
-	maxSolarChargingCurrent, err := axpert.MaxSolarChargingCurrent(conn)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("MaxSolarChargingCurrent: ", maxSolarChargingCurrent)
-
-	maxUtilityChargingCurrent, err := axpert.MaxUtilityChargingCurrent(conn)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("MaxUtilityChargingCurrent: ", maxUtilityChargingCurrent)
-
-	maxTotalChargingCurrent, err := axpert.MaxTotalChargingCurrent(conn)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("MaxTotalChargingCurrent: ", maxTotalChargingCurrent)
-	*/
 
 	defaults, err := axpert.DefaultSettings(conn)
 	if err != nil {
@@ -153,13 +121,6 @@ func main() {
 		fmt.Println(err)
 	}
 	fmt.Println("Device status params ", string(jsonParams))
-
-	// Remove due to timeout error
-	//params, err = axpert.DeviceGeneralStatus2(conn, params)
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//fmt.Println("All Device status params ", params)
 
 	mode, err := axpert.DeviceMode(conn)
 	if err != nil {

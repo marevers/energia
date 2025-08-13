@@ -2,11 +2,10 @@ package axpert
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/howeyc/crc16"
 
@@ -18,6 +17,37 @@ const (
 	lf        byte = 0x0a
 	leftParen byte = 0x28
 )
+
+// Retrieves connectors for all Axpert inverters connected through USB.
+func GetUSBInverters() (cs []*connector.USBConnector, err error) {
+	paths, err := connector.GetUSBPaths()
+	if err != nil {
+		return nil, err
+	}
+
+	var crs []*connector.USBConnector
+
+	for _, path := range paths {
+		conn, err := connector.NewUSBConnector(path)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = SerialNo(conn)
+		if err != nil {
+			conn.Close()
+			continue
+		}
+
+		crs = append(crs, conn)
+	}
+
+	if len(crs) < 1 {
+		return nil, errors.New("no inverters found")
+	}
+
+	return crs, nil
+}
 
 func ProtocolId(c connector.Connector) (id string, err error) {
 	id, err = sendRequest(c, "QPI")
@@ -733,12 +763,12 @@ func sendCommand(c connector.Connector, command string) error {
 }
 
 func sendRequest(c connector.Connector, req string) (resp string, err error) {
-	defer timeTrack(time.Now(), "timing : "+req)
-	log.Println("Sending request", req)
+	// defer timeTrack(time.Now(), "timing : "+req)
+	// log.Println("Sending request", req)
 	reqBytes := []byte(req)
 	reqBytes = append(reqBytes, crc(reqBytes)...)
 	reqBytes = append(reqBytes, cr)
-	log.Println("Sending ", reqBytes)
+	// log.Println("Sending ", reqBytes)
 	err = c.Write(reqBytes)
 	if err != nil {
 		return
@@ -749,14 +779,14 @@ func sendRequest(c connector.Connector, req string) (resp string, err error) {
 		return
 	}
 
-	log.Println("Received ", readBytes)
+	// log.Println("Received ", readBytes)
 	err = validateResponse(readBytes)
 	if err != nil {
 		return
 	}
 
 	resp = string(readBytes[1 : len(readBytes)-3])
-	log.Println("Received response: ", resp)
+	// log.Println("Received response: ", resp)
 	return
 }
 
@@ -1431,24 +1461,24 @@ func parseParallelInfo(resp string) (*ParallelInfo, error) {
 
 }
 
-func parseParallelPVInfo(resp string, info *ParallelInfo) (*ParallelInfo, error) {
-	parts := strings.Split(resp, " ")
-	if len(parts) < 9 {
-		return info, fmt.Errorf("response too short: %s", resp)
-	}
+// func parseParallelPVInfo(resp string, info *ParallelInfo) (*ParallelInfo, error) {
+// 	parts := strings.Split(resp, " ")
+// 	if len(parts) < 9 {
+// 		return info, fmt.Errorf("response too short: %s", resp)
+// 	}
 
-	i, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return info, err
-	}
-	info.PV1ChargingPower = i
+// 	i, err := strconv.Atoi(parts[1])
+// 	if err != nil {
+// 		return info, err
+// 	}
+// 	info.PV1ChargingPower = i
 
-	// TODO: Someday, maybe, parse PV2 & PV3 values
+// 	// TODO: Someday, maybe, parse PV2 & PV3 values
 
-	return info, nil
-}
+// 	return info, nil
+// }
 
-func timeTrack(start time.Time, name string) {
-	elapsed := time.Since(start)
-	log.Printf("%s took %s", name, elapsed)
-}
+// func timeTrack(start time.Time, name string) {
+// 	elapsed := time.Since(start)
+// 	log.Printf("%s took %s", name, elapsed)
+// }

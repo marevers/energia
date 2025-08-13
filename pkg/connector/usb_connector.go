@@ -1,24 +1,44 @@
 package connector
 
 import (
-	"github.com/kristoiv/hid"
+	"errors"
 	"fmt"
 	"time"
-	"errors"
+
+	"github.com/sstallion/go-hid"
 )
 
 type USBConnector struct {
 	deviceInfo *hid.DeviceInfo
-	device     hid.Device
+	device     *hid.Device
 }
 
-func NewUSBConnector(path string) (uc *USBConnector, err error) {
-	deviceInfo, err := hid.ByPath(path)
+func GetUSBPaths() (paths []string, err error) {
+	paths = make([]string, 0)
+
+	err = hid.Enumerate(hid.VendorIDAny, hid.ProductIDAny, func(info *hid.DeviceInfo) error {
+		paths = append(paths, info.Path)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &USBConnector{deviceInfo: deviceInfo}, nil
+	return paths, nil
+}
+
+func NewUSBConnector(path string) (uc *USBConnector, err error) {
+	device, err := hid.OpenPath(path)
+	if err != nil {
+		return nil, err
+	}
+
+	deviceInfo, err := device.GetDeviceInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	return &USBConnector{deviceInfo: deviceInfo, device: device}, nil
 }
 
 func (uc *USBConnector) DeviceInfo() *hid.DeviceInfo {
@@ -30,16 +50,7 @@ func (uc *USBConnector) Path() string {
 }
 
 func (uc *USBConnector) Open() error {
-	// Do nothing if already open
-	if uc.device != nil {
-		return nil
-	}
-
-	device, err := uc.deviceInfo.Open()
-	if err != nil {
-		return err
-	}
-	uc.device = device
+	// Device is already open - no need to open
 	return nil
 }
 
@@ -54,29 +65,59 @@ func (uc *USBConnector) ReadUntilCR() ([]byte, error) {
 
 // TODO This should take timout as argument or set by config
 func (uc *USBConnector) Read(terminator byte) ([]byte, error) {
-	ch := uc.device.ReadCh()
 	bytesRead := make([]byte, 0, 8)
-	reading := true
-	for reading {
+	buffer := make([]byte, 64) // HID report buffer
+	timeout := 5 * time.Second
+
+	// Create channels for communication with the read goroutine
+	type readResult struct {
+		data []byte
+		n    int
+		err  error
+	}
+	resultCh := make(chan readResult, 1)
+
+	// Start a goroutine to perform the blocking read
+	go func() {
+		n, err := uc.device.Read(buffer)
+		resultCh <- readResult{data: buffer, n: n, err: err}
+	}()
+
+	for {
 		select {
-			case bs := <-ch:
-				for _, b := range bs {
-					if b > 0 {
-						bytesRead = append(bytesRead, b)
-					}
-					if b == terminator {
-						reading = false
-					}
-				}
-			case <-time.After(3 * time.Second):
-				fmt.Println("Timeout reading HID")
-				reading = false
-				return nil, errors.New("Timeout reading HID")
+		case result := <-resultCh:
+			if result.err != nil {
+				return nil, fmt.Errorf("failed to read from HID device: %w", result.err)
 			}
+
+			// Process the read bytes
+			for i := 0; i < result.n; i++ {
+				b := result.data[i]
+				if b > 0 {
+					bytesRead = append(bytesRead, b)
+				}
+				if b == terminator {
+					return bytesRead, nil
+				}
+			}
+
+			// If we haven't found the terminator, start another read
+			go func() {
+				n, err := uc.device.Read(buffer)
+				resultCh <- readResult{data: buffer, n: n, err: err}
+			}()
+
+		case <-time.After(timeout):
+			return nil, errors.New("timeout reading HID")
 		}
-	return bytesRead, nil
+	}
 }
 
 func (uc *USBConnector) Write(bytes []byte) error {
-	return uc.device.Write(bytes)
+	_, err := uc.device.Write(bytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
